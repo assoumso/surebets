@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse des Prédictions de Football</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Analyse des Prédictions de Football</h1>
+    </header>
+    <main>
+        <section id="controls">
+            <label for="date">Sélectionnez une date :</label>
+            <input type="date" id="date" required>
+            <button id="analyze-btn">Analyser</button>
+        </section>
+        <section id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyse en cours...</p>
+        </section>
+        <section id="results" style="display: none;">
+            <h2>Résultats (Probabilités Lay > 80%)</h2>
+            <table id="results-table">
+                <thead>
+                    <tr>
+                    <th>Match</th>
+                    <th>Heure</th>
+                    <th>Score Correct</th>
+                    <th>Probabilité Score Correct</th>
+                    <th>Probabilité Lay</th>
+                    <th>Probabilité BTTS</th>
+                    <th>Probabilité de But</th>
+                    <th>Date</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <button id="export-csv">Exporter en CSV</button>
+            <button id="vip-btn" style="display: none;">VIP</button>
+        </section>
+        <section id="vip-results" style="display: none;">
+            <h2>Top 20 Matchs VIP</h2>
+            <table id="vip-table">
+                <thead>
+                    <tr>
+                        <th>Match</th>
+                        <th>Heure</th>
+                        <th>Score Correct</th>
+                        <th>Probabilité Score Correct</th>
+                        <th>Probabilité Lay</th>
+                        <th>Probabilité BTTS</th>
+                        <th>Probabilité de But</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+        <p id="no-results" style="display: none;">Aucun résultat trouvé pour cette date. Essayez aujourd'hui ou demain.</p>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+🚀 DÉPLOIEMENT EN COURS - INSTRUCTIONS RAPIDES
+
+Le déploiement est en attente de votre configuration. Répondez aux questions suivantes :
+
+1. **Set up and deploy**: Appuyez sur **Entrée** (Yes)
+2. **Which scope**: Sélectionnez votre compte (appuyez sur Entrée)
+3. **Link to existing project**: Tapez **n** pour créer un nouveau projet
+4. **Project name**: Tapez **barakasyt** (ou appuyez sur Entrée pour le nom par défaut)
+5. **Directory**: Appuyez sur **Entrée** (.)
+6. **Override settings**: Appuyez sur **Entrée** (No)
+
+📱 **URL finale attendue** : https://barakasyt.vercel.app
+
+⚡ **Alternative rapide** : Dans le terminal actuel, répondez simplement "y" puis "n" pour créer un nouveau projet.
+
+💡 **Astuce** : Tout est déjà configuré dans vercel.json, acceptez les valeurs par défaut !

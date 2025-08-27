@@ -80,3 +80,6 @@ build/
 # package-lock.json
 # yarn.lock
 .vercel
+
+# Local Netlify folder
+.netlify

@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "echo 'Build completed'"
+    "build": "node server.js",
+    "netlify": "netlify deploy --prod"
   },
   "keywords": [],
   "author": "",

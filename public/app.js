@@ -31,6 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Masquer l'indicateur de chargement
                 loading.style.display = 'none';
                 
+                if (!Array.isArray(data)) {
+                    alert('Erreur lors de l\'analyse: ' + (data.error || 'Données invalides'));
+                    return;
+                }
+                
                 // Obtenir l'heure actuelle pour filtrer les matchs non joués
                 const now = new Date();
                 const currentHour = now.getHours();

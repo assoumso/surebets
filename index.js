@@ -1,6 +1,5 @@
 const fs = require('fs');
-const chromium = require('@sparticuz/chromium');
-const playwright = require('playwright-core');
+const playwright = require('playwright');
 const inputDateStr = process.argv[2] || new Date().toISOString().split('T')[0];
 const inputDate = new Date(inputDateStr);
 const today = new Date();
@@ -44,11 +43,7 @@ async function gotoWithRetry(page, url, options, retries = 3) {
 }
 
 (async () => {
-  const browser = await playwright.chromium.launch({
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
-    args: chromium.args
-  });
+  const browser = await playwright.chromium.launch({ headless: true });
   const page = await browser.newPage();
   await gotoWithRetry(page, url, { waitUntil: 'domcontentloaded', timeout: 300000 });
 

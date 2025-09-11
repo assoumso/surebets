@@ -19,8 +19,7 @@ const RETRY_DELAY = 2000; // 2 secondes
 const AXIOS_TIMEOUT = 10000; // 10 secondes
 
 // Fonction utilitaire pour les retries
-async function fetchWithRetry(url, retries = MAX_RETRIES) {
-  try {
+async function fetchWithRetry(url, retries = MAX_RETRIES) {\n  for (let attempt = 1; attempt <= retries; attempt++) {\n    try {\n      const browser = await playwright.chromium.launch({ headless: true });\n      const context = await browser.newContext({\n        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'\n      });\n      const page = await context.newPage();\n      await page.goto(url, { timeout: AXIOS_TIMEOUT });\n      const content = await page.content();\n      await browser.close();\n      return { data: content };\n    } catch (error) {\n      console.error(`Tentative ${attempt} échouée pour ${url}: ${error.message}`);\n      if (attempt === retries) throw error;\n      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));\n    }\n  }\n}\n  try {
     const response = await axios.get(url, { 
       timeout: AXIOS_TIMEOUT,
       headers: {

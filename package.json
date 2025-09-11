@@ -2,13 +2,7 @@
   "name": "these",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build": "node server.js",
-    "netlify": "netlify deploy --prod"
-  },
+  "scripts": {\n    "test": "echo \"Error: no test specified\" && exit 1",\n    "start": "node api/index.js",\n    "dev": "node server.js",\n    "netlify": "netlify deploy --prod"\n  },
   "keywords": [],
   "author": "",
   "license": "ISC",

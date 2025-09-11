@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const playwright = require('playwright');
 const inputDateStr = process.argv[2] || new Date().toISOString().split('T')[0];
 const inputDate = new Date(inputDateStr);
@@ -137,9 +138,8 @@ async function gotoWithRetry(page, url, options, retries = 3) {
 });
 const results = (await Promise.all(resultsPromises)).filter(result => result !== null);
 
-  // Remove the misplaced require inside the async function
-  // const fs = require('fs');
-  fs.writeFileSync('results.json', JSON.stringify(results, null, 2));
+  const resultsPath = path.join(__dirname, 'results.json');
+  fs.writeFileSync(resultsPath, JSON.stringify(results, null, 2));
 console.log('Résultats écrits dans results.json');
   await browser.close();
 })();

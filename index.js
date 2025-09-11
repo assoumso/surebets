@@ -299,14 +299,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
     // Journaliser les statistiques
     console.log(`Analyse terminée: ${validResults.length}/${results.length} matchs traités avec succès`);
     
-    // Sauvegarder les résultats dans un fichier pour référence et débogage
-    fs.writeFileSync(
-      path.join(__dirname, 'results.json'), 
-      JSON.stringify(validResults, null, 2), 
-      'utf8'
-    );
-    
-    return validResults;
+    // Sauvegarde désactivée pour compatibilité Vercel\n    return validResults;
   } catch (error) {
     console.error(`Erreur globale lors de l'analyse: ${error.message}`);
     throw error;

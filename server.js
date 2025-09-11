@@ -28,12 +28,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/visit', (req, res) => {
+app.get('/visit-count', (req, res) => {
   visitCount++;
-  fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
+  // Sauvegarde désactivée pour compatibilité Vercel
   res.json({ count: visitCount });
 });
-
 app.get('/analyze', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   console.log(`Requête d'analyse reçue pour la date: ${date}`);
@@ -139,6 +138,15 @@ app.get('/api/advanced-analysis', (req, res) => {
 });
 
 // Nouvel endpoint pour les résultats VIP
+app.post('/analyze', async (req, res) => {
+  try {
+    const results = await analyze(req.body.date || new Date().toISOString().split('T')[0]);
+    res.json({ message: 'Analyse terminée avec succès', results });
+  } catch (error) {
+    console.error("Erreur pendant l'analyse:", error);
+    res.status(500).json({ error: "Erreur pendant l'analyse" });
+  }
+});
 app.get('/analyze-vip', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   console.log(`Requête d'analyse VIP reçue pour la date: ${date}`);
@@ -175,6 +183,15 @@ app.listen(port, () => {
 });
 
 // Nouvel endpoint pour l'analyse Top 20 VIP
+app.post('/analyze-top20-vip', async (req, res) => {
+  try {
+    const results = await analyzeTop20VIP(req.body.date || new Date().toISOString().split('T')[0]);
+    res.json({ message: 'Analyse Top 20 VIP terminée avec succès', results });
+  } catch (error) {
+    console.error("Erreur pendant l'analyse Top 20 VIP:", error);
+    res.status(500).json({ error: "Erreur pendant l'analyse Top 20 VIP" });
+  }
+});
 app.get('/analyze-top20-vip', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   console.log(`Requête d'analyse Top 20 VIP reçue pour la date: ${date}`);

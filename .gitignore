@@ -79,3 +79,4 @@ build/
 # Lock files (optional, uncomment if needed)
 # package-lock.json
 # yarn.lock
+.vercel

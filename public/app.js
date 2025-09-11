@@ -18,42 +18,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // Gestionnaire d'événement pour le bouton Analyser
     analyzeBtn.addEventListener('click', function() {
         const selectedDate = dateSelector.value;
-        
+    
         // Afficher l'indicateur de chargement
         loading.style.display = 'block';
         resultsSection.style.display = 'none';
         noResults.style.display = 'none';
         tableBody.innerHTML = '';
-        
+    
         fetch('/analyze?date=' + selectedDate)
             .then(response => response.json())
             .then(data => {
                 // Masquer l'indicateur de chargement
                 loading.style.display = 'none';
-                
-                if (!Array.isArray(data)) {
-                    alert('Erreur lors de l\'analyse: ' + (data.error || 'Données invalides'));
+    
+                if (data.error) {
+                    alert('Erreur lors de l\'analyse: ' + data.error);
                     return;
                 }
-                
+    
+                let resultsData = data.results || data;
+    
+                if (!Array.isArray(resultsData)) {
+                    alert('Erreur lors de l\'analyse: Données invalides');
+                    return;
+                }
+    
                 // Obtenir l'heure actuelle pour filtrer les matchs non joués
                 const now = new Date();
                 const currentHour = now.getHours();
                 const currentMinute = now.getMinutes();
                 const currentDate = now.toISOString().split('T')[0];
-                
+    
                 // Filtrer les matchs qui n'ont pas encore été joués
-                const upcomingMatches = data;
-                
+                const upcomingMatches = resultsData;
+    
                 const filteredMatches = upcomingMatches;
-                
+    
                 // Trier par probabilité Lay décroissante (du plus élevé au plus faible)
                 filteredMatches.sort((a, b) => {
                     const layProbA = 100 - a.correctScoreProb;
                     const layProbB = 100 - b.correctScoreProb;
                     return layProbB - layProbA;
                 });
-                
+    
                 if (filteredMatches.length === 0) {
                     noResults.style.display = 'block';
                 } else {
@@ -67,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Erreur: ' + error.message);
             });
     });
-    
     // Fonction pour afficher les résultats dans le tableau
     function displayResults(data) {
         tableBody.innerHTML = '';
@@ -326,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Charger le compteur de visites
-    fetch('/visit')
+    fetch('/visit-count')
       .then(response => response.json())
       .then(data => {
         const visitCountElement = document.getElementById('visit-count');

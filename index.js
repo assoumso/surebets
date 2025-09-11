@@ -3,7 +3,7 @@ const path = require('path');
 const playwright = require('playwright');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const tf = require('@tensorflow/tfjs');
+// Remove: const tf = require('@tensorflow/tfjs');
 
 
 const urlMap = {
@@ -165,22 +165,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
 
         // Fonction de raffinement IA avec TensorFlow
         async function refineWithAI(features) {
-          try {
-            const model = tf.sequential();
-            model.add(tf.layers.dense({units: 1, inputShape: [features.length]}));
-            model.compile({optimizer: 'sgd', loss: 'meanSquaredError'});
-          
-            // Données dummy pour entraînement minimal (à remplacer par données réelles pour robustesse)
-            const xs = tf.tensor2d([features], [1, features.length]);
-            const ys = tf.tensor2d([[features.reduce((a, b) => a + b, 0) / features.length]], [1, 1]); // Dummy target
-            await model.fit(xs, ys, {epochs: 10});
-          
-            const prediction = model.predict(xs).dataSync()[0];
-            return prediction; // Retourner probabilité raffinée
-          } catch (error) {
-            console.error(`Erreur lors du raffinement IA: ${error.message}`);
-            return features.reduce((a, b) => a + b, 0) / features.length; // Fallback en cas d'erreur
-          }
+          return features.reduce((a, b) => a + b, 0) / features.length; // Direct fallback to average
         }
 
         // Remplacer par un calcul statistique avancé simple sans bibliothèque externe

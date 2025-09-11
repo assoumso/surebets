@@ -1,17 +1,31 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analyse des Prédictions de Football</title>
+    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse des Prédictions de Football pour le marché de 0,5 But. </title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
-    <header>
+    <header id=\"home\">
+        <nav>
+            <ul>
+                <li><a href="#home">Accueil</a></li>
+                <li><a href="#controls">Analyse</a></li>
+                <li><a href="#vip-results">VIP</a></li>
+                <li><a href="#payment">Paiement</a></li>
+            </ul>
+        </nav>
         <h1>Analyse des Prédictions de Football</h1>
+        <div id="description">
+            <p>BarakaSYT est une plateforme innovante pour l'analyse des prédictions de football uniquement pour le 0,5 but dans un match , offrant des insights avancés et des fonctionnalités VIP.</p>
+            <p>BarakaSYT is an innovative platform for football prediction analysis, offering advanced insights and VIP features.</p>
+        </div>
+        <p id=\"visit-counter\">Nombre de visites: <span id=\"visit-count\">0</span></p>
+        <section id=\"instructions\"> <h2>Étapes d'utilisation</h2> <li>Cliquez sur le bouton ANALYSE pour afficher la première analyse.</li> <li>Cliquez sur le bouton VIP situé en bas de la première liste pour afficher les résultats garantis à 98%.</li> </section>
     </header>
     <main>
-        <section id="controls">
+        <section id="controls" id=\"controls\">
             <label for="date">Sélectionnez une date :</label>
             <input type="date" id="date" required>
             <button id="analyze-btn">Analyser</button>
@@ -54,14 +68,47 @@
                         <th>Probabilité BTTS</th>
                         <th>Probabilité de But</th>
                         <th>Prob. But 1ère MT (IA)</th>
+                        <th>Score Pondéré</th>
                         <th>Date</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </section>
+        
         <p id="no-results" style="display: none;">Aucun résultat trouvé pour cette date. Essayez aujourd'hui ou demain.</p>
+        <section id="payment" style="display: none;">
+            <h2>Paiement VIP</h2>
+            <div id="payment-step1">
+                <h3>Étape 1: Sélection du plan</h3>
+                <label for="start-date">Date de début (JJ/MM/AAAA):</label>
+                <input type="date" id="start-date" required>
+                <select id="plan-select">
+                    <option value="1">1 jour - 500</option>
+                    <option value="4">4 jours - 1500</option>
+                    <option value="7">7 jours - 2500</option>
+                    <option value="30">30 jours - 10000</option>
+                </select>
+                <p id="end-date">Date de fin: </p>
+                <button id="next-step1">Suivant</button>
+            </div>
+            <div id="payment-step2" style="display: none;">
+                <h3>Étape 2: Paiement</h3>
+                <form id="payment-form">
+                    <div id="card-element"></div>
+                    <div id="card-errors" role="alert"></div>
+                    <button id="submit-payment">Payer</button>
+                </form>
+                <button id="back-step2">Retour</button>
+            </div>
+            <div id="payment-step3" style="display: none;">
+                <h3>Étape 3: Confirmation</h3>
+                <p>Paiement réussi! Votre abonnement VIP est actif.</p>
+                <button id="close-payment">Fermer</button>
+            </div>
+        </section>
     </main>
+    
     <script src="app.js"></script>
 </body>
 </html>

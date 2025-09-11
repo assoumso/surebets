@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Filtrer les matchs qui n'ont pas encore été joués
                 const upcomingMatches = data;
                 
-                const filteredMatches = upcomingMatches.filter(match => (100 - match.correctScoreProb) > 80);
+                const filteredMatches = upcomingMatches;
                 
                 // Trier par probabilité Lay décroissante (du plus élevé au plus faible)
                 filteredMatches.sort((a, b) => {
@@ -86,9 +86,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${matchName}</td>
                 <td>${item.time || 'N/A'}</td>
                 <td>${item.correctScore}</td>
-                <td>${item.correctScoreProb}%</td>
-                <td>${layProb}%</td>
-                <td>${item.bttsProb}%</td>
+                <td>${item.correctScoreProb.toFixed(2)}%</td>
+                <td>${layProb.toFixed(2)}%</td>
+                <td>${item.bttsProb.toFixed(2)}%</td>
                 <td>${(item.goalProb * 100).toFixed(2)}%</td>
                 <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
                 <td>${item.date}</td>
@@ -115,9 +115,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentOrder = header.getAttribute('data-order') || 'asc';
                 const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
                 
-                // Réinitialiser l'ordre de tri pour tous les en-têtes
-                headers.forEach(h => h.removeAttribute('data-order'));
+                // Réinitialiser l'ordre de tri et classes pour tous les en-têtes
+                headers.forEach(h => {
+                    h.removeAttribute('data-order');
+                    h.classList.remove('sorted-asc', 'sorted-desc');
+                });
                 header.setAttribute('data-order', newOrder);
+                header.classList.add(newOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
                 
                 // Trier les lignes
                 rows.sort((a, b) => {
@@ -164,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Calculer layProb
             const layProb = 100 - item.correctScoreProb;
             
-            csvContent += `"${matchName}","${item.time || 'N/A'}","${item.correctScore}","${item.correctScoreProb}%","${layProb}%","${item.bttsProb}%","${(item.goalProb * 100).toFixed(2)}%","${item.firstHalfGoalProb.toFixed(2)}%","${item.date}"\n`;
+            csvContent += `"${matchName}","${item.time || 'N/A'}","${item.correctScore}","${item.correctScoreProb.toFixed(2)}%","${layProb.toFixed(2)}%","${item.bttsProb.toFixed(2)}%","${(item.goalProb * 100).toFixed(2)}%","${item.firstHalfGoalProb.toFixed(2)}%","${item.date}"\n`;
         });
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -178,67 +182,157 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Gestionnaire pour le bouton VIP
-    document.getElementById('vip-btn').addEventListener('click', function() {
-        if (!window.currentData) return;
-        const data = window.currentData;
-
-        // Calculer un score pondéré pour l'analyse approfondie
-        const weightedData = data.map(item => {
-            // Convertir forme en score (W=3, D=1, L=0)
-            const formScore = (form) => form.split('').reduce((acc, res) => acc + (res === 'W' ? 3 : res === 'D' ? 1 : 0), 0) / 5;
-            const team1FormScore = formScore(item.team1Form || 'LLLLL');
-            const team2FormScore = formScore(item.team2Form || 'LLLLL');
-            const avgForm = (team1FormScore + team2FormScore) / 2;
-
-            // Score over 2.5 moyen
-            const avgOver = (item.team1Over + item.team2Over) / 2 / 100;
-
-            // Score pondéré: 40% correctScoreProb, 20% avgForm, 20% avgOver, 10% bttsProb, 10% goalProb (AI-enhanced)
-            const weightedScore = (item.correctScoreProb / 100 * 0.4) + (avgForm * 0.2) + (avgOver * 0.2) + (item.bttsProb / 100 * 0.1) + (item.goalProb * 0.1);
-            return { ...item, weightedScore };
-        });
-
-        // Trier par weightedScore descendant
-        weightedData.sort((a, b) => b.weightedScore - a.weightedScore);
-
-        // Prendre top 20
-        const top20 = weightedData.slice(0, 20);
-
-        // Afficher dans le tableau VIP
-        const vipTableBody = document.querySelector('#vip-table tbody');
-        vipTableBody.innerHTML = '';
-        top20.forEach(item => {
-            const row = document.createElement('tr');
-            const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
-            const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
-            const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-            const layProb = 100 - item.correctScoreProb;
-            row.innerHTML = `
-                <td>${matchName}</td>
-                <td>${item.time || 'N/A'}</td>
-                <td>${item.correctScore}</td>
-                <td>${item.correctScoreProb}%</td>
-                <td>${layProb}%</td>
-                <td>${item.bttsProb}%</td>
-                <td>${(item.goalProb * 100).toFixed(2)}% (AI)</td>
-                <td>${item.firstHalfGoalProb.toFixed(2)}% (IA)</td>
-                <td>${item.date}</td>
-            `;
-            vipTableBody.appendChild(row);
-        });
-
-        // Ajouter une zone de détection AI
-        let aiZone = document.getElementById('ai-goal-detection');
-        if (!aiZone) {
-            aiZone = document.createElement('div');
-            aiZone.id = 'ai-goal-detection';
-            aiZone.innerHTML = '<h3>Zone de Détection AI: Probabilité de But Avancée</h3><p>Cette section utilise un algorithme AI basé sur la distribution de Poisson pour des prédictions fiables de buts.</p>';
-            document.getElementById('vip-results').appendChild(aiZone);
+    document.getElementById('vip-btn').addEventListener('click', async function() {
+        const selectedDate = dateSelector.value;
+        
+        try {
+            const response = await fetch('/analyze-vip?date=' + selectedDate);
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des résultats VIP');
+            }
+            const data = await response.json();
+            
+            // Afficher dans le tableau VIP
+            const vipTableBody = document.querySelector('#vip-table tbody');
+            vipTableBody.innerHTML = '';
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
+                const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
+                const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                const layProb = 100 - item.correctScoreProb;
+                row.innerHTML = `
+                    <td>${matchName}</td>
+                    <td>${item.time || 'N/A'}</td>
+                    <td>${item.correctScore}</td>
+                    <td>${item.correctScoreProb.toFixed(2)}%</td>
+                    <td>${layProb.toFixed(2)}%</td>
+                    <td>${item.bttsProb.toFixed(2)}%</td>
+                    <td>${(item.goalProb * 100).toFixed(2)}%</td>
+                    <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
+                    <td>${(item.weightedScore * 100).toFixed(2)}%</td>
+                    <td>${item.date}</td>
+                `;
+                vipTableBody.appendChild(row);
+            });
+    
+            document.getElementById('vip-results').style.display = 'block';
+        } catch (error) {
+            console.error('Erreur VIP:', error);
+            alert('Erreur lors du chargement des résultats VIP: ' + error.message);
         }
-
-        document.getElementById('vip-results').style.display = 'block';
     });
 
     // Attacher l'événement à l'export button
     document.getElementById('export-csv').addEventListener('click', exportToCSV);
+
+    // Gestion des liens de navigation
+    document.querySelector('nav a[href="#home"]').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo(0, 0);
+    });
+    document.querySelector('nav a[href="#controls"]').addEventListener('click', (e) => {
+      e.preventDefault();
+      analyzeBtn.click();
+    });
+    document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (e) => {
+      e.preventDefault();
+      if (document.getElementById('vip-btn').style.display !== 'none') {
+        document.getElementById('vip-btn').click();
+      } else {
+        alert('Veuillez d\'abord effectuer une analyse.');
+      }
+    });
+    document.querySelector('nav a[href="#payment"]').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('payment').style.display = 'block';
+    });
+
+    // Logique de paiement
+    const stripe = Stripe('your_stripe_publishable_key'); // Remplacez par votre clé publique Stripe
+    const elements = stripe.elements();
+    const card = elements.create('card');
+    card.mount('#card-element');
+
+    card.on('change', (event) => {
+      const displayError = document.getElementById('card-errors');
+      displayError.textContent = event.error ? event.error.message : '';
+    });
+
+    const prices = {
+      1: 500,
+      4: 1500,
+      7: 2500,
+      30: 10000
+    };
+
+    function updateEndDate() {
+      const startDate = document.getElementById('start-date').value;
+      const days = parseInt(document.getElementById('plan-select').value);
+      if (startDate && days) {
+        const start = new Date(startDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + days);
+        const formattedEnd = end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        document.getElementById('end-date').textContent = `Date de fin: ${formattedEnd}`;
+      }
+    }
+
+    document.getElementById('start-date').addEventListener('change', updateEndDate);
+    document.getElementById('plan-select').addEventListener('change', updateEndDate);
+
+    document.getElementById('next-step1').addEventListener('click', () => {
+      const days = document.getElementById('plan-select').value;
+      const amount = prices[days] * 100; // en centimes
+      document.getElementById('payment-step1').style.display = 'none';
+      document.getElementById('payment-step2').style.display = 'block';
+      window.paymentAmount = amount;
+    });
+
+    document.getElementById('back-step2').addEventListener('click', () => {
+      document.getElementById('payment-step2').style.display = 'none';
+      document.getElementById('payment-step1').style.display = 'block';
+    });
+
+    document.getElementById('payment-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: card,
+      });
+      if (error) {
+        document.getElementById('card-errors').textContent = error.message;
+      } else {
+        const response = await fetch('/create-payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: window.paymentAmount }),
+        });
+        const { clientSecret } = await response.json();
+        const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: paymentMethod.id,
+        });
+        if (confirmError) {
+          document.getElementById('card-errors').textContent = confirmError.message;
+        } else {
+          document.getElementById('payment-step2').style.display = 'none';
+          document.getElementById('payment-step3').style.display = 'block';
+        }
+      }
+    });
+
+    document.getElementById('close-payment').addEventListener('click', () => {
+      document.getElementById('payment').style.display = 'none';
+    });
+
+    // Charger le compteur de visites
+    fetch('/visit')
+      .then(response => response.json())
+      .then(data => {
+        const visitCountElement = document.getElementById('visit-count');
+        if (visitCountElement) {
+          visitCountElement.innerText = data.count;
+        }
+      })
+      .catch(error => console.error('Error fetching visit count:', error));
 });

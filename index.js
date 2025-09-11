@@ -40,35 +40,8 @@ async function fetchWithRetry(url, retries = MAX_RETRIES) {
 
 // Fonction spécifique pour les requêtes nécessitant un navigateur (pour Vercel)
 async function fetchWithBrowser(url, retries = MAX_RETRIES) {
-  const chromium = require('@sparticuz/chromium');
-  const { chromium: playwright } = require('playwright-core');
-  
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    let browser = null;
-    try {
-      browser = await playwright.launch({
-        args: chromium.args,
-        executablePath: await chromium.executablePath(),
-        headless: true,
-      });
-      
-      const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      });
-      
-      const page = await context.newPage();
-      await page.goto(url, { timeout: AXIOS_TIMEOUT });
-      const content = await page.content();
-      
-      await browser.close();
-      return { data: content };
-    } catch (error) {
-      if (browser) await browser.close();
-      console.error(`Tentative ${attempt} échouée pour ${url} avec navigateur: ${error.message}`);
-      if (attempt === retries) throw error;
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    }
-  }
+  // Cette fonction n'est plus utilisée pour les détails; gérée dans analyze
+  throw new Error('fetchWithBrowser is deprecated; use browser in analyze');
 }
 
 // Fonction de validation des données
@@ -116,8 +89,27 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
   console.log(`Analyse des matchs pour ${dateParam} (${dateStr})`);
 
   try {
-    // Utiliser fetchWithBrowser si sur Vercel, sinon fetchWithRetry
-    const fetchFunction = process.env.VERCEL ? fetchWithBrowser : fetchWithRetry;
+    let browser = null;
+    let page = null;
+    const isVercel = process.env.VERCEL;
+    const fetchFunction = isVercel ? async (u) => {
+      if (!browser) {
+        const chromium = require('@sparticuz/chromium');
+        const { chromium: playwright } = require('playwright-core');
+        browser = await playwright.launch({
+          args: chromium.args,
+          executablePath: await chromium.executablePath(),
+          headless: true,
+        });
+        const context = await browser.newContext({
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        });
+        page = await context.newPage();
+      }
+      await page.goto(u, { timeout: AXIOS_TIMEOUT });
+      return { data: await page.content() };
+    } : fetchWithRetry;
+
     const response = await fetchFunction(url);
     const $ = cheerio.load(response.data);
     const matches = [];
@@ -250,7 +242,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         };
 
         // Simulation Monte Carlo pour estimer BTTS et Over/Under de manière probabiliste
-        const numSimulations = 1000; // Nombre de simulations pour précision statistique
+        const numSimulations = 100; // Nombre de simulations pour précision statistique
         let bttsCount = 0;
         let overCount = 0;
         for (let i = 0; i < numSimulations; i++) {
@@ -334,8 +326,10 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
     
     // Journaliser les statistiques
     console.log(`Analyse terminée: ${validResults.length}/${results.length} matchs traités avec succès`);
-    
-    // Sauvegarde désactivée pour compatibilité Vercel\n    return validResults;
+
+    // Sauvegarde désactivée pour compatibilité Vercel
+    return validResults;
+
   } catch (error) {
     console.error(`Erreur globale lors de l'analyse: ${error.message}`);
     throw error;
@@ -353,11 +347,15 @@ if (require.main === module) {
     }
   })();
 }
-
 // Fonction supplémentaire pour traiter et classer le top 15 des prédictions VIP avec algorithme de fiabilité avancé
 async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
   try {
-    const results = await analyze(dateStr);
+    const results = await analyze(dateStr) || [];
+    
+    if (!results || !Array.isArray(results) || results.length === 0) {
+      console.warn(`Aucun résultat valide pour l'analyse VIP à la date ${dateStr}`);
+      return [];
+    }
     
     const reliabilityData = results.map(item => {
       const layProb = 100 - item.correctScoreProb;

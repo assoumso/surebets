@@ -13,7 +13,7 @@
                 <li><a href="#home">Accueil</a></li>
                 <li><a href="#controls">Analyse</a></li>
                 <li><a href="#vip-results">VIP</a></li>
-                <li><a href="#payment">Paiement</a></li>
+                <li><a href="#payment">Abonnements</a></li>
             </ul>
         </nav>
         <header>
@@ -25,7 +25,7 @@
             <p>BarakaSYT is an innovative platform for football prediction analysis, offering advanced insights and VIP features.</p>
         </div>
         <p id=\"visit-counter\">Nombre de visites: <span id=\"visit-count\">0</span></p>
-        <section id=\"instructions\"> <h2>Étapes d'utilisation</h2> <li>Cliquez sur le bouton ANALYSE pour afficher la première analyse.</li> <li>Cliquez sur le bouton VIP situé en bas de la première liste pour afficher les résultats garantis à 98%.</li> </section>
+        
     </header>
     <main>
         <section id="controls" id=\"controls\">
@@ -59,7 +59,7 @@
             <button id="vip-btn" style="display: none;">VIP</button>
         </section>
         <section id="vip-results" style="display: none;">
-            <h2>Top 20 Matchs VIP</h2>
+            <h2>Top 15 Prédictions VIP</h2>
             <table id="vip-table">
                 <thead>
                     <tr>
@@ -115,32 +115,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-<section id="vip">
-  <h2>Top 15 Prédictions VIP</h2>
-  <div id="vip-legend">
-    <p>Légende:</p>
-    <ul>
-      <li class="very-safe">Très sûres (fiabilité > 90%)</li>
-      <li class="probable">Probables (70-90%)</li>
-      <li class="consider">À considérer (50-70%)</li>
-    </ul>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Équipe Domicile</th>
-        <th>Équipe Extérieur</th>
-        <th>Prédiction</th>
-        <th>Probabilité</th>
-        <th>Icône</th>
-        <th>Graphique</th>
-        <th>Niveau de Certitude</th>
-        <th>Marge d'Erreur</th>
-        <th>Critères d'Évaluation</th>
-      </tr>
-    </thead>
-    <tbody id="vip-results"></tbody>
-  </table>
-  <button id="export-vip-csv">Exporter VIP en CSV</button>
-  <button id="export-vip-json">Exporter VIP en JSON</button>
-</section>

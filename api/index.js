@@ -40,10 +40,10 @@ app.get('/analyze', async (req, res) => {
   
   try {
     const startTime = Date.now();
-    const results = await analyze(date);
+    const results = await analyze(date) || []; // Ajouter une valeur par défaut si undefined
     const duration = Date.now() - startTime;
     
-    console.log(`Analyse terminée en ${duration}ms, ${results.length} matchs trouvés`);
+    console.log(`Analyse terminée en ${duration}ms, ${results ? results.length : 0} matchs trouvés`);
     
     if (!Array.isArray(results)) {
       console.error(`Format de résultat invalide: ${typeof results}`);
@@ -141,7 +141,7 @@ app.get('/api/advanced-analysis', (req, res) => {
 // Nouvel endpoint pour les résultats VIP
 app.post('/analyze', async (req, res) => {
   try {
-    const results = await analyze(req.body.date || new Date().toISOString().split('T')[0]);
+    const results = await analyze(req.body.date || new Date().toISOString().split('T')[0]) || [];
     res.json({ message: 'Analyse terminée avec succès', results });
   } catch (error) {
     console.error("Erreur pendant l'analyse:", error);
@@ -154,10 +154,10 @@ app.get('/analyze-vip', async (req, res) => {
   
   try {
     const startTime = Date.now();
-    const results = await analyzeVIP(date);
+    const results = await analyzeVIP(date) || []; // Ajouter une valeur par défaut si undefined
     const duration = Date.now() - startTime;
     
-    console.log(`Analyse VIP terminée en ${duration}ms, ${results.length} matchs trouvés`);
+    console.log(`Analyse VIP terminée en ${duration}ms, ${results ? results.length : 0} matchs trouvés`);
     
     if (!Array.isArray(results)) {
       console.error(`Format de résultat VIP invalide: ${typeof results}`);

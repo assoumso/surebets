@@ -36,8 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         noResults.style.display = 'none';
         tableBody.innerHTML = '';
     
-        fetch('/analyze?date=' + selectedDate)
-            .then(response => response.json())
+        fetch('/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) }).then(response => response.json())
             .then(data => {
                 // Masquer l'indicateur de chargement
                 loading.style.display = 'none';
@@ -209,10 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const data = await response.json();
             
+            // Trier les données par probabilité (weightedScore) et limiter à 15 prédictions
+            const sortedData = data.sort((a, b) => b.weightedScore - a.weightedScore).slice(0, 15);
+            
             // Afficher dans le tableau VIP
             const vipTableBody = document.querySelector('#vip-table tbody');
             vipTableBody.innerHTML = '';
-            data.forEach(item => {
+            sortedData.forEach(item => {
                 const row = document.createElement('tr');
                 const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
                 const matchSlug = urlParts ? urlParts[1] : 'Inconnu';

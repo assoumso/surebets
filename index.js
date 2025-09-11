@@ -87,6 +87,10 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         const formToScore = (form) => form.split('').reduce((acc, res) => acc + (res === 'W' ? 1.5 : res === 'D' ? 1 : 0.5), 0) / 5;
         const lambdaTeam1 = (team1Over / 100 * 3) + formToScore(team1Form) * 0.5;
         const lambdaTeam2 = (team2Over / 100 * 3) + formToScore(team2Form) * 0.5;
+        const lambdaTeam1Half = lambdaTeam1 * 0.45;
+        const lambdaTeam2Half = lambdaTeam2 * 0.45;
+        const probNoGoalFirstHalf = Math.exp(-lambdaTeam1Half) * Math.exp(-lambdaTeam2Half);
+        const firstHalfGoalProb = (1 - probNoGoalFirstHalf) * 100;
         const probNoGoalTeam1 = Math.exp(-lambdaTeam1);
         const probNoGoalTeam2 = Math.exp(-lambdaTeam2);
         const probAnyGoals = 1 - (probNoGoalTeam1 * probNoGoalTeam2);
@@ -99,7 +103,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
           }
         });
 
-        return { match: match.link, time, correctScore, correctScoreProb, layProb, bttsProb, otherProb, date: dateStr, team1Form, team2Form, team1Over, team2Over, goalProb };
+        return { match: match.link, time, correctScore, correctScoreProb, layProb, bttsProb, otherProb, date: dateStr, team1Form, team2Form, team1Over, team2Over, goalProb, firstHalfGoalProb };
       } catch (error) {
         console.error(`Error processing match ${match.link}: ${error.message}`);
         return null;

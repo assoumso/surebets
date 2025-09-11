@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${layProb}%</td>
                 <td>${item.bttsProb}%</td>
                 <td>${(item.goalProb * 100).toFixed(2)}%</td>
+                <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
                 <td>${item.date}</td>
             `;
             tableBody.appendChild(row);
@@ -153,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function exportToCSV() {
         if (!window.currentData) return;
         const data = window.currentData;
-        let csvContent = 'Match,Heure,Score Correct,Probabilité Score Correct,Probabilité Lay,Probabilité BTTS,Probabilité de But,Date\n';
+        let csvContent = 'Match,Heure,Score Correct,Probabilité Score Correct,Probabilité Lay,Probabilité BTTS,Probabilité de But,Prob. But 1ère MT (IA),Date\n';
         
         data.forEach(item => {
             const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
@@ -163,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Calculer layProb
             const layProb = 100 - item.correctScoreProb;
             
-            csvContent += `"${matchName}","${item.time || 'N/A'}","${item.correctScore}","${item.correctScoreProb}%","${layProb}%","${item.bttsProb}%","${(item.goalProb * 100).toFixed(2)}%","${item.date}"\n`;
+            csvContent += `"${matchName}","${item.time || 'N/A'}","${item.correctScore}","${item.correctScoreProb}%","${layProb}%","${item.bttsProb}%","${(item.goalProb * 100).toFixed(2)}%","${item.firstHalfGoalProb.toFixed(2)}%","${item.date}"\n`;
         });
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -220,6 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${layProb}%</td>
                 <td>${item.bttsProb}%</td>
                 <td>${(item.goalProb * 100).toFixed(2)}% (AI)</td>
+                <td>${item.firstHalfGoalProb.toFixed(2)}% (IA)</td>
                 <td>${item.date}</td>
             `;
             vipTableBody.appendChild(row);

@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { analyze, analyzeVIP } = require('./index');
+const { analyze, analyzeVIP } = require('../index');
 const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
 
@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 
 
 let visitCount = 0;
-const countFile = path.join(__dirname, 'visitCount.json');
+const countFile = path.join(__dirname, '..', 'visitCount.json');
 
 try {
   if (fs.existsSync(countFile)) {
@@ -22,10 +22,10 @@ try {
   console.error('Error loading visit count:', error);
 }
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 app.get('/visit-count', (req, res) => {
@@ -177,48 +177,4 @@ app.get('/analyze-vip', async (req, res) => {
     });
   }
 });
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
-// Nouvel endpoint pour l'analyse Top 20 VIP
-app.post('/analyze-top20-vip', async (req, res) => {
-  try {
-    const results = await analyzeTop20VIP(req.body.date || new Date().toISOString().split('T')[0]);
-    res.json({ message: 'Analyse Top 20 VIP terminée avec succès', results });
-  } catch (error) {
-    console.error("Erreur pendant l'analyse Top 20 VIP:", error);
-    res.status(500).json({ error: "Erreur pendant l'analyse Top 20 VIP" });
-  }
-});
-app.get('/analyze-top20-vip', async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
-  console.log(`Requête d'analyse Top 20 VIP reçue pour la date: ${date}`);
-  
-  try {
-    const startTime = Date.now();
-    const results = await analyzeTop20VIP(date);
-    const duration = Date.now() - startTime;
-    
-    console.log(`Analyse Top 20 VIP terminée en ${duration}ms, ${results.length} matchs trouvés`);
-    
-    if (!Array.isArray(results)) {
-      console.error(`Format de résultat Top 20 VIP invalide: ${typeof results}`);
-      return res.status(500).json({ error: 'Format de résultat Top 20 VIP invalide' });
-    }
-    
-    if (results.length === 0) {
-      console.warn(`Aucun match Top 20 VIP trouvé pour la date ${date}`);
-    }
-    
-    res.json(results);
-  } catch (error) {
-    console.error(`Erreur pendant l'analyse Top 20 VIP: ${error.message}`);
-    res.status(500).json({ 
-      error: 'Erreur pendant l\'analyse Top 20 VIP', 
-      message: error.message,
-      date: date
-    });
-  }
-});
+app.post('/analyze-top20-vip', async (req, res) => {\n  try {\n    const results = await analyzeTop20VIP(req.body.date || new Date().toISOString().split('T')[0]);\n    res.json({ message: 'Analyse Top 20 VIP terminée avec succès', results });\n  } catch (error) {\n    console.error(\"Erreur pendant l'analyse Top 20 VIP:\", error);\n    res.status(500).json({ error: \"Erreur pendant l'analyse Top 20 VIP\" });\n  }\n});\napp.get('/analyze-top20-vip', async (req, res) => {\n  const date = req.query.date || new Date().toISOString().split('T')[0];\n  console.log(`Requête d'analyse Top 20 VIP reçue pour la date: ${date}`);\n  \n  try {\n    const startTime = Date.now();\n    const results = await analyzeTop20VIP(date);\n    const duration = Date.now() - startTime;\n    \n    console.log(`Analyse Top 20 VIP terminée en ${duration}ms, ${results.length} matchs trouvés`);\n    \n    if (!Array.isArray(results)) {\n      console.error(`Format de résultat Top 20 VIP invalide: ${typeof results}`);\n      return res.status(500).json({ error: 'Format de résultat Top 20 VIP invalide' });\n    }\n    \n    if (results.length === 0) {\n      console.warn(`Aucun match Top 20 VIP trouvé pour la date ${date}`);\n    }\n    \n    res.json(results);\n  } catch (error) {\n    console.error(`Erreur pendant l'analyse Top 20 VIP: ${error.message}`);\n    res.status(500).json({ \n      error: 'Erreur pendant l\\'analyse Top 20 VIP', \n      message: error.message,\n      date: date\n    });\n  }\n});\nmodule.exports = app;

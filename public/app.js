@@ -1,4 +1,15 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  
+  const themeToggle = document.getElementById('theme-toggle');
+  themeToggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+  });
+  
     // Référence aux éléments DOM
     const analyzeBtn = document.getElementById('analyze-btn');
     const dateSelector = document.getElementById('date');
@@ -341,4 +352,88 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       })
       .catch(error => console.error('Error fetching visit count:', error));
+});
+
+
+let vipData = [];
+
+function loadVIPResults(date) {
+  fetch('/analyze-vip?date=' + date)
+    .then(response => response.json())
+    .then(data => {
+      vipData = data;
+      displayVIPResults(data);
+    })
+    .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));
+}
+
+function displayVIPResults(results) {
+  const vipResults = document.getElementById('vip-results');
+  vipResults.innerHTML = '';
+  results.forEach(match => {
+    let rowClass = '';
+    let icon = '';
+    if (match.certaintyLevel === 'Très sûre') {
+      rowClass = 'very-safe';
+      icon = '✅';
+    } else if (match.certaintyLevel === 'Probable') {
+      rowClass = 'probable';
+      icon = '⚠️';
+    } else {
+      rowClass = 'consider';
+      icon = '❓';
+    }
+    const row = document.createElement('tr');
+    row.className = rowClass;
+    row.innerHTML = `
+      <td>${match.home}</td>
+      <td>${match.away}</td>
+      <td>${match.prediction}</td>
+      <td>${match.probability}%</td>
+      <td>${icon}</td>
+      <td><div class="prob-bar-container"><div class="prob-bar" style="width: ${match.probability}%;"></div></div></td>
+      <td>${match.certaintyLevel}</td>
+      <td>${match.errorMargin}</td>
+      <td>${match.evaluationCriteria}</td>
+    `;
+    vipResults.appendChild(row);
+  });
+}
+
+function exportVIPToCSV() {
+  if (!vipData || vipData.length === 0) {
+    alert('Aucun donnée VIP à exporter.');
+    return;
+  }
+  const csvContent = "data:text/csv;charset=utf-8," +
+    "Home,Away,Prediction,Probability,Certainty Level,Error Margin,Evaluation Criteria\n" +
+    vipData.map(match => `${match.home},${match.away},${match.prediction},${match.probability},${match.certaintyLevel},${match.errorMargin},${match.evaluationCriteria}`).join("\n");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "vip_results.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportVIPToJSON() {
+  if (!vipData || vipData.length === 0) {
+    alert('Aucun donnée VIP à exporter.');
+    return;
+  }
+  const jsonContent = "data:text/json;charset=utf-8," + JSON.stringify(vipData);
+  const encodedUri = encodeURI(jsonContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "vip_results.json");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Dans DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('export-vip-csv').addEventListener('click', exportVIPToCSV);
+  document.getElementById('export-vip-json').addEventListener('click', exportVIPToJSON);
 });

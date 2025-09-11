@@ -6,6 +6,9 @@ const fs = require('fs');
 
 
 const app = express();
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
 const port = process.env.PORT || 3000;
 
 // Modèle IA pour l'analyse avancée des matchs
@@ -21,8 +24,6 @@ try {
 } catch (error) {
   console.error('Error loading visit count:', error);
 }
-
-app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
@@ -177,4 +178,12 @@ app.get('/analyze-vip', async (req, res) => {
     });
   }
 });
-app.post('/analyze-top20-vip', async (req, res) => {\n  try {\n    const results = await analyzeTop20VIP(req.body.date || new Date().toISOString().split('T')[0]);\n    res.json({ message: 'Analyse Top 20 VIP terminée avec succès', results });\n  } catch (error) {\n    console.error(\"Erreur pendant l'analyse Top 20 VIP:\", error);\n    res.status(500).json({ error: \"Erreur pendant l'analyse Top 20 VIP\" });\n  }\n});\napp.get('/analyze-top20-vip', async (req, res) => {\n  const date = req.query.date || new Date().toISOString().split('T')[0];\n  console.log(`Requête d'analyse Top 20 VIP reçue pour la date: ${date}`);\n  \n  try {\n    const startTime = Date.now();\n    const results = await analyzeTop20VIP(date);\n    const duration = Date.now() - startTime;\n    \n    console.log(`Analyse Top 20 VIP terminée en ${duration}ms, ${results.length} matchs trouvés`);\n    \n    if (!Array.isArray(results)) {\n      console.error(`Format de résultat Top 20 VIP invalide: ${typeof results}`);\n      return res.status(500).json({ error: 'Format de résultat Top 20 VIP invalide' });\n    }\n    \n    if (results.length === 0) {\n      console.warn(`Aucun match Top 20 VIP trouvé pour la date ${date}`);\n    }\n    \n    res.json(results);\n  } catch (error) {\n    console.error(`Erreur pendant l'analyse Top 20 VIP: ${error.message}`);\n    res.status(500).json({ \n      error: 'Erreur pendant l\\'analyse Top 20 VIP', \n      message: error.message,\n      date: date\n    });\n  }\n});\nmodule.exports = app;
+
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Serveur démarré sur le port ${port}`);
+  });
+}
+
+module.exports = app;

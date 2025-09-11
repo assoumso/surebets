@@ -16,7 +16,10 @@
                 <li><a href="#payment">Paiement</a></li>
             </ul>
         </nav>
-        <h1>Analyse des Prédictions de Football</h1>
+        <header>
+          <h1>Baraka SYT - Prédictions de Matchs de Football</h1>
+          <button id="theme-toggle">Basculer le thème</button>
+        </header>
         <div id="description">
             <p>BarakaSYT est une plateforme innovante pour l'analyse des prédictions de football uniquement pour le 0,5 but dans un match , offrant des insights avancés et des fonctionnalités VIP.</p>
             <p>BarakaSYT is an innovative platform for football prediction analysis, offering advanced insights and VIP features.</p>
@@ -112,3 +115,32 @@
     <script src="app.js"></script>
 </body>
 </html>
+<section id="vip">
+  <h2>Top 15 Prédictions VIP</h2>
+  <div id="vip-legend">
+    <p>Légende:</p>
+    <ul>
+      <li class="very-safe">Très sûres (fiabilité > 90%)</li>
+      <li class="probable">Probables (70-90%)</li>
+      <li class="consider">À considérer (50-70%)</li>
+    </ul>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Équipe Domicile</th>
+        <th>Équipe Extérieur</th>
+        <th>Prédiction</th>
+        <th>Probabilité</th>
+        <th>Icône</th>
+        <th>Graphique</th>
+        <th>Niveau de Certitude</th>
+        <th>Marge d'Erreur</th>
+        <th>Critères d'Évaluation</th>
+      </tr>
+    </thead>
+    <tbody id="vip-results"></tbody>
+  </table>
+  <button id="export-vip-csv">Exporter VIP en CSV</button>
+  <button id="export-vip-json">Exporter VIP en JSON</button>
+</section>

@@ -354,51 +354,56 @@ if (require.main === module) {
   })();
 }
 
-// Fonction supplémentaire pour traiter et classer le top 20 des probabilités VIP
-async function analyzeTop20VIP(dateStr = new Date().toISOString().split('T')[0]) {
+// Fonction supplémentaire pour traiter et classer le top 15 des prédictions VIP avec algorithme de fiabilité avancé
+async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
   try {
     const results = await analyze(dateStr);
     
-    // Filtrer les matchs avec layProb >= 80%
-    const filteredResults = results.filter(item => (100 - item.correctScoreProb) >= 80);
-    
-    // Ajouter le niveau de certitude
-    const classifiedResults = filteredResults.map(item => {
+    const reliabilityData = results.map(item => {
       const layProb = 100 - item.correctScoreProb;
-      let certaintyLevel = 'autre';
-      if (layProb > 90) {
-        certaintyLevel = 'très sûre';
-      } else if (layProb >= 80) {
-        certaintyLevel = 'probable';
+      
+      const reliabilityScore = 
+        (layProb * 0.4) + 
+        (item.goalProb * 100 * 0.3) + 
+        (item.firstHalfGoalProb * 0.2) + 
+        (item.bttsProb * 0.1);
+      
+      let certaintyLevel = 'Faible fiabilité';
+      if (reliabilityScore > 90) {
+        certaintyLevel = 'Très sûre';
+      } else if (reliabilityScore >= 70) {
+        certaintyLevel = 'Probable';
+      } else if (reliabilityScore >= 50) {
+        certaintyLevel = 'À considérer';
       }
+      
+      const errorMargin = ((100 - reliabilityScore) / 2).toFixed(2);
+      
+      const evaluationCriteria = `Fiabilité calculée basée sur: layProb (40%), goalProb (30%), firstHalfGoalProb (20%), bttsProb (10%). Marge d'erreur estimée: ±${errorMargin}%`;
       
       return { 
         ...item, 
         layProb: layProb.toFixed(2),
+        reliabilityScore: reliabilityScore.toFixed(2),
         certaintyLevel,
-        correctScoreProb: item.correctScoreProb.toFixed(2),
-        bttsProb: item.bttsProb.toFixed(2),
-        goalProb: (item.goalProb * 100).toFixed(2),
-        firstHalfGoalProb: item.firstHalfGoalProb.toFixed(2)
+        errorMargin,
+        evaluationCriteria
       };
     });
     
-    // Trier par layProb descendant
-    classifiedResults.sort((a, b) => b.layProb - a.layProb);
+    reliabilityData.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
+    const top15 = reliabilityData.slice(0, 15);
     
-    // Prendre top 20 et valider
-    const top20 = classifiedResults.slice(0, 20).map(validateMatchData);
+    console.log(`Analyse VIP terminée: ${top15.length} matchs analysés`);
     
-    console.log(`Analyse Top 20 VIP terminée: ${top20.length} matchs classifiés`);
-    
-    return top20;
+    return top15;
   } catch (error) {
-    console.error(`Erreur lors de l'analyse Top 20 VIP: ${error.message}`);
+    console.error(`Erreur lors de l'analyse VIP: ${error.message}`);
     return [];
   }
 }
 
-module.exports = { analyze, analyzeVIP, analyzeTop20VIP };
+module.exports = { analyze, analyzeVIP };
 
 // Fonction pour analyser les résultats VIP avec optimisations
 async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {

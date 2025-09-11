@@ -14,11 +14,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@sparticuz/chromium": "^138.0.2",
     "@tensorflow/tfjs": "^4.22.0",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "express": "^5.1.0",
     "playwright": "^1.47.0",
+    "playwright-core": "^1.55.0",
     "stripe": "^18.5.0"
   }
 }

@@ -19,20 +19,55 @@ const RETRY_DELAY = 2000; // 2 secondes
 const AXIOS_TIMEOUT = 10000; // 10 secondes
 
 // Fonction utilitaire pour les retries
-async function fetchWithRetry(url, retries = MAX_RETRIES) {\n  for (let attempt = 1; attempt <= retries; attempt++) {\n    try {\n      const browser = await playwright.chromium.launch({ headless: true });\n      const context = await browser.newContext({\n        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'\n      });\n      const page = await context.newPage();\n      await page.goto(url, { timeout: AXIOS_TIMEOUT });\n      const content = await page.content();\n      await browser.close();\n      return { data: content };\n    } catch (error) {\n      console.error(`Tentative ${attempt} échouée pour ${url}: ${error.message}`);\n      if (attempt === retries) throw error;\n      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));\n    }\n  }\n}\n  try {
-    const response = await axios.get(url, { 
-      timeout: AXIOS_TIMEOUT,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
-    return response;
-  } catch (error) {
-    if (retries <= 0) throw error;
-    
-    console.log(`Erreur lors de la récupération de ${url}. Tentative restante: ${retries}. Erreur: ${error.message}`);
-    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-    return fetchWithRetry(url, retries - 1);
+async function fetchWithRetry(url, retries = MAX_RETRIES) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      // Utiliser axios pour les requêtes simples
+      const response = await axios.get(url, { 
+        timeout: AXIOS_TIMEOUT,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+      return response;
+    } catch (error) {
+      console.error(`Tentative ${attempt} échouée pour ${url}: ${error.message}`);
+      if (attempt === retries) throw error;
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    }
+  }
+}
+
+// Fonction spécifique pour les requêtes nécessitant un navigateur (pour Vercel)
+async function fetchWithBrowser(url, retries = MAX_RETRIES) {
+  const chromium = require('@sparticuz/chromium');
+  const { chromium: playwright } = require('playwright-core');
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    let browser = null;
+    try {
+      browser = await playwright.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      });
+      
+      const context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      });
+      
+      const page = await context.newPage();
+      await page.goto(url, { timeout: AXIOS_TIMEOUT });
+      const content = await page.content();
+      
+      await browser.close();
+      return { data: content };
+    } catch (error) {
+      if (browser) await browser.close();
+      console.error(`Tentative ${attempt} échouée pour ${url} avec navigateur: ${error.message}`);
+      if (attempt === retries) throw error;
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+    }
   }
 }
 
@@ -81,7 +116,9 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
   console.log(`Analyse des matchs pour ${dateParam} (${dateStr})`);
 
   try {
-    const response = await fetchWithRetry(url);
+    // Utiliser fetchWithBrowser si sur Vercel, sinon fetchWithRetry
+    const fetchFunction = process.env.VERCEL ? fetchWithBrowser : fetchWithRetry;
+    const response = await fetchFunction(url);
     const $ = cheerio.load(response.data);
     const matches = [];
     
@@ -107,7 +144,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
 
     const resultsPromises = matches.map(async (match) => {
       try {
-        const detailResponse = await fetchWithRetry(match.link);
+        const detailResponse = await fetchFunction(match.link);
         const $$ = cheerio.load(detailResponse.data);
         let time = 'N/A';
         $$('p').each((i, p) => {

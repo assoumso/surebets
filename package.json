@@ -1,5 +1,5 @@
 {
-  "name": "these",
+  "name": "barakasyt",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -13,13 +13,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@sparticuz/chromium": "^129.0.0",
     "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-backend-cpu": "^4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
+    "@tensorflow/tfjs-core": "^4.22.0",
+    "@tensorflow/tfjs-layers": "^4.22.0",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
     "express": "^5.1.0",
-    "playwright": "^1.47.0",
-    "playwright-core": "^1.47.0",
     "stripe": "^18.5.0"
   }
 }

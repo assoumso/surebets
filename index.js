@@ -3,8 +3,46 @@ const path = require('path');
 const playwright = require('playwright');
 const axios = require('axios');
 const cheerio = require('cheerio');
-// Remove: const tf = require('@tensorflow/tfjs');
+// Importer uniquement les modules TensorFlow.js nécessaires pour la compatibilité serverless
+const tf = require('@tensorflow/tfjs-core');
+require('@tensorflow/tfjs-backend-cpu');
+// Importer le module layers pour les fonctions comme sequential, dense, etc.
+const tfl = require('@tensorflow/tfjs-layers');
+// Importer WASM backend de manière conditionnelle pour éviter les problèmes sur Vercel
+let wasmBackendInitialized = false;
 
+// Fonction pour initialiser le backend WASM si nécessaire
+async function initTensorFlowBackend() {
+  try {
+    // Vérifier si nous sommes dans un environnement Vercel
+    const isVercel = process.env.VERCEL;
+    
+    // Utiliser le backend CPU par défaut
+    await tf.setBackend('cpu');
+    
+    // Commenter temporairement l'initialisation WASM pour éviter les erreurs de chemin sur Windows
+    // if (!isVercel && !wasmBackendInitialized) {
+    //   try {
+    //     // Charger le backend WASM dynamiquement pour éviter les problèmes sur Vercel
+    //     const tfjs_wasm = require('@tensorflow/tfjs-backend-wasm');
+    //     await tfjs_wasm.setWasmPaths(
+    //       'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/'
+    //     );
+    //     await tf.setBackend('wasm');
+    //     wasmBackendInitialized = true;
+    //     console.log('TensorFlow.js WASM backend initialisé avec succès');
+    //   } catch (wasmError) {
+    //     console.warn('Impossible d\'initialiser le backend WASM, utilisation du backend CPU:', wasmError.message);
+    //   }
+    // }
+    
+    console.log('TensorFlow.js initialisé avec le backend:', tf.getBackend());
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de l\'initialisation de TensorFlow.js:', error);
+    return false;
+  }
+}
 
 const urlMap = {
   'yesterday': 'https://www.mybets.today/soccer-predictions/yesterday/',
@@ -71,6 +109,13 @@ function validateMatchData(match) {
 }
 
 async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
+  // Initialiser TensorFlow avant toute utilisation
+  const tfInitialized = await initTensorFlowBackend();
+  if (!tfInitialized) {
+    console.error('Échec de l\'initialisation de TensorFlow, utilisation de calculs de fallback');
+    // Vous pouvez ajouter ici une logique de fallback si nécessaire
+  }
+  
   const inputDate = new Date(dateStr);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -89,26 +134,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
   console.log(`Analyse des matchs pour ${dateParam} (${dateStr})`);
 
   try {
-    let browser = null;
-    let page = null;
-    const isVercel = process.env.VERCEL;
-    const fetchFunction = isVercel ? async (u) => {
-      if (!browser) {
-        const chromium = require('@sparticuz/chromium');
-        const { chromium: playwright } = require('playwright-core');
-        browser = await playwright.launch({
-          args: chromium.args,
-          executablePath: await chromium.executablePath(),
-          headless: true,
-        });
-        const context = await browser.newContext({
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        });
-        page = await context.newPage();
-      }
-      await page.goto(u, { timeout: AXIOS_TIMEOUT });
-      return { data: await page.content() };
-    } : fetchWithRetry;
+    const fetchFunction = fetchWithRetry;
 
     const response = await fetchFunction(url);
     const $ = cheerio.load(response.data);
@@ -191,10 +217,24 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         const probNoGoalTeam2 = Math.exp(-lambdaTeam2);
         const probAnyGoals = 1 - (probNoGoalTeam1 * probNoGoalTeam2);
 
-        // Fonction de raffinement IA avec TensorFlow
+        // Remove TensorFlow import to fix compatibility issues on Vercel
         async function refineWithAI(features) {
-          return features.reduce((a, b) => a + b, 0) / features.length; // Direct fallback to average
+          // Créer un modèle simple de régression
+          const model = tfl.sequential();
+          model.add(tfl.layers.dense({units: 1, inputShape: [features.length]}));
+          model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+
+          // Données d'entraînement factices (à remplacer par des données réelles pour une vraie implémentation)
+          const xs = tf.tensor2d([features], [1, features.length]);
+          const ys = tf.tensor2d([[Math.random()]]); // Valeur cible aléatoire pour démo
+
+          await model.fit(xs, ys, {epochs: 10});
+
+          // Prédire
+          const prediction = model.predict(xs);
+          return (await prediction.data())[0];
         }
+
 
         // Remplacer par un calcul statistique avancé simple sans bibliothèque externe
         let goalProb = (basicGoalProb + probAnyGoals + (bttsProb / 100)) / 3; // Moyenne pondérée comme exemple d'algorithme 'avancé'

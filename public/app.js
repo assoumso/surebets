@@ -2,14 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
   
-  const themeToggle = document.getElementById('theme-toggle');
-  themeToggle.addEventListener('click', () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-  });
-  
     // Référence aux éléments DOM
     const analyzeBtn = document.getElementById('analyze-btn');
     const dateSelector = document.getElementById('date');
@@ -17,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsSection = document.getElementById('results');
     const tableBody = document.querySelector('#results-table tbody');
     const noResults = document.getElementById('no-results');
-    const exportBtn = document.getElementById('export-csv');
     
     resultsSection.style.display = 'none';
     noResults.style.display = 'none';
@@ -60,23 +51,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentDate = now.toISOString().split('T')[0];
     
                 // Filtrer les matchs qui n'ont pas encore été joués
-                const upcomingMatches = resultsData;
-    
-                const filteredMatches = upcomingMatches;
-    
+                let filteredMatches = resultsData;
+                // Appliquer le filtre de probabilité
+                filteredMatches = filteredMatches.filter(item => item.correctScoreProb < 50);
                 // Trier par probabilité Lay décroissante (du plus élevé au plus faible)
                 filteredMatches.sort((a, b) => {
                     const layProbA = 100 - a.correctScoreProb;
                     const layProbB = 100 - b.correctScoreProb;
                     return layProbB - layProbA;
                 });
+                const noResults = document.getElementById('no-results');
+                const resultsSection = document.getElementById('results');
     
-                if (filteredMatches.length === 0) {
+                if (data.length === 0) {
+                    noResults.textContent = 'Aucun match trouvé pour cette date. Essayez aujourd\'hui ou demain.';
                     noResults.style.display = 'block';
                 } else {
-                    resultsSection.style.display = 'block';
-                    displayResults(filteredMatches);
-                    document.getElementById('vip-btn').style.display = 'inline-block';
+                    if (filteredMatches.length > 0) {
+                        resultsSection.style.display = 'block';
+                        displayResults(filteredMatches);
+                    } else {
+                        noResults.textContent = 'Aucun match avec probabilité de score correct inférieure à 50%. Vérifiez les résultats VIP pour plus d\'options.';
+                        noResults.style.display = 'block';
+                    }
                 }
             })
             .catch(error => {
@@ -85,7 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     });
     // Fonction pour afficher les résultats dans le tableau
-    function displayResults(data) {
+function getProbColor(value) {
+  if (value > 70) return 'prob-green';
+  else if (value > 40) return 'prob-yellow';
+  else return 'prob-red';
+}
+
+function displayResults(data) {
         tableBody.innerHTML = '';
         data.forEach(item => {
             const row = document.createElement('tr');
@@ -105,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${item.correctScoreProb.toFixed(2)}%</td>
                 <td>${layProb.toFixed(2)}%</td>
                 <td>${item.bttsProb.toFixed(2)}%</td>
-                <td>${(item.goalProb * 100).toFixed(2)}%</td>
+                <td class="${getProbColor(item.goalProb * 100)}">${(item.goalProb * 100).toFixed(2)}%</td>
                 <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
                 <td>${item.date}</td>
             `;
@@ -113,9 +116,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         makeTableSortable();
-        // Stocker data pour export
-        window.currentData = data;
-    }
+    // Stocker data pour export
+    window.currentData = data;
+
+    // Ajouter dynamiquement le bouton VIP
+    const vipBtn = document.createElement('button');
+    vipBtn.id = 'vip-btn';
+    vipBtn.textContent = 'Voir Résultats VIP';
+    resultsSection.appendChild(vipBtn);
+    
+    vipBtn.addEventListener('click', async function() {
+        const selectedDate = dateSelector.value;
+        
+        try {
+            const response = await fetch('/analyze-vip?date=' + selectedDate);
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des résultats VIP');
+            }
+            const data = await response.json();
+            
+            // Trier les données par probabilité (weightedScore) et limiter à 15 prédictions
+            const sortedData = data.sort((a, b) => b.weightedScore - a.weightedScore).slice(0, 15);
+            
+            // Afficher dans le tableau VIP
+            const vipTableBody = document.querySelector('#vip-table tbody');
+            vipTableBody.innerHTML = '';
+            sortedData.forEach(item => {
+                const row = document.createElement('tr');
+                const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
+                const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
+                const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                const layProb = 100 - item.correctScoreProb;
+                row.innerHTML = `
+                    <td>${matchName}</td>
+                    <td>${item.time || 'N/A'}</td>
+                    <td>${item.correctScore}</td>
+                    <td>${item.correctScoreProb.toFixed(2)}%</td>
+                    <td>${layProb.toFixed(2)}%</td>
+                    <td>${item.bttsProb.toFixed(2)}%</td>
+                    <td class="${getColorClass(item.goalProb * 100)}">${(item.goalProb * 100).toFixed(2)}%</td>
+                    <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
+                    <td>${(item.weightedScore * 100).toFixed(2)}%</td>
+                    <td>${item.date}</td>
+                `;
+                vipTableBody.appendChild(row);
+            });
+    
+            document.getElementById('vip-results').style.display = 'block';
+        } catch (error) {
+            console.error('Erreur VIP:', error);
+            alert('Erreur lors du chargement des résultats VIP: ' + error.message);
+        }
+    });
+}
     
     function makeTableSortable() {
         const table = document.getElementById('results-table');
@@ -197,54 +250,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(link);
     }
     
-    // Gestionnaire pour le bouton VIP
-    document.getElementById('vip-btn').addEventListener('click', async function() {
-        const selectedDate = dateSelector.value;
-        
-        try {
-            const response = await fetch('/analyze-vip?date=' + selectedDate);
-            if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des résultats VIP');
-            }
-            const data = await response.json();
-            
-            // Trier les données par probabilité (weightedScore) et limiter à 15 prédictions
-            const sortedData = data.sort((a, b) => b.weightedScore - a.weightedScore).slice(0, 15);
-            
-            // Afficher dans le tableau VIP
-            const vipTableBody = document.querySelector('#vip-table tbody');
-            vipTableBody.innerHTML = '';
-            sortedData.forEach(item => {
-                const row = document.createElement('tr');
-                const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
-                const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
-                const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                const layProb = 100 - item.correctScoreProb;
-                row.innerHTML = `
-                    <td>${matchName}</td>
-                    <td>${item.time || 'N/A'}</td>
-                    <td>${item.correctScore}</td>
-                    <td>${item.correctScoreProb.toFixed(2)}%</td>
-                    <td>${layProb.toFixed(2)}%</td>
-                    <td>${item.bttsProb.toFixed(2)}%</td>
-                    <td>${(item.goalProb * 100).toFixed(2)}%</td>
-                    <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
-                    <td>${(item.weightedScore * 100).toFixed(2)}%</td>
-                    <td>${item.date}</td>
-                `;
-                vipTableBody.appendChild(row);
-            });
+    // Nouvelle fonction pour déterminer la classe de couleur basée sur le pourcentage
+    function getColorClass(prob) {
+    const value = parseFloat(prob);
+    if (value < 40) return 'low-prob';
+    else if (value < 70) return 'medium-prob';
+    else return 'high-prob';
+    }
     
-            document.getElementById('vip-results').style.display = 'block';
-        } catch (error) {
-            console.error('Erreur VIP:', error);
-            alert('Erreur lors du chargement des résultats VIP: ' + error.message);
-        }
-    });
-
-    // Attacher l'événement à l'export button
-    document.getElementById('export-csv').addEventListener('click', exportToCSV);
-
     // Gestion des liens de navigation
     document.querySelector('nav a[href="#home"]').addEventListener('click', (e) => {
       e.preventDefault();
@@ -256,11 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (e) => {
       e.preventDefault();
-      if (document.getElementById('vip-btn').style.display !== 'none') {
-        document.getElementById('vip-btn').click();
-      } else {
-        alert('Veuillez d\'abord effectuer une analyse.');
-      }
+      loadVIPResults(dateSelector.value);
     });
     document.querySelector('nav a[href="#payment"]').addEventListener('click', (e) => {
       e.preventDefault();
@@ -371,71 +380,35 @@ function loadVIPResults(date) {
 
 function displayVIPResults(results) {
   const vipResults = document.getElementById('vip-results');
+  vipResults.style.display = 'block'; // Ajouter pour montrer la section
   vipResults.innerHTML = '';
   results.forEach(match => {
     let rowClass = '';
     let icon = '';
     if (match.certaintyLevel === 'Très sûre') {
       rowClass = 'very-safe';
-      icon = '✅';
-    } else if (match.certaintyLevel === 'Probable') {
-      rowClass = 'probable';
-      icon = '⚠️';
-    } else {
-      rowClass = 'consider';
-      icon = '❓';
+    } else if (match.certaintyLevel === 'Sûre') {
+      rowClass = 'safe';
+    } else if (match.certaintyLevel === 'Moyenne') {
+      rowClass = 'medium';
+    } else if (match.certaintyLevel === 'Risquée') {
+      rowClass = 'risky';
+    } else if (match.certaintyLevel === 'Très risquée') {
+      rowClass = 'very-risky';
     }
     const row = document.createElement('tr');
     row.className = rowClass;
     row.innerHTML = `
-      <td>${match.home}</td>
-      <td>${match.away}</td>
-      <td>${match.prediction}</td>
-      <td>${match.probability}%</td>
-      <td>${icon}</td>
-      <td><div class="prob-bar-container"><div class="prob-bar" style="width: ${match.probability}%;"></div></div></td>
-      <td>${match.certaintyLevel}</td>
-      <td>${match.errorMargin}</td>
-      <td>${match.evaluationCriteria}</td>
+      <td>${match.match}</td>
+      <td>${match.time}</td>
+      <td>${match.correctScore}</td>
+      <td>${match.correctScoreProb.toFixed(2)}%</td>
+      <td>${match.bttsProb.toFixed(2)}%</td>
+      <td>${match.goalProb.toFixed(2)}%</td>
+      <td>${match.firstHalfGoalProb.toFixed(2)}%</td>
+      <td>${match.weightedScore.toFixed(2)}%</td>
+      <td>${match.date}</td>
     `;
     vipResults.appendChild(row);
   });
 }
-
-function exportVIPToCSV() {
-  if (!vipData || vipData.length === 0) {
-    alert('Aucun donnée VIP à exporter.');
-    return;
-  }
-  const csvContent = "data:text/csv;charset=utf-8," +
-    "Home,Away,Prediction,Probability,Certainty Level,Error Margin,Evaluation Criteria\n" +
-    vipData.map(match => `${match.home},${match.away},${match.prediction},${match.probability},${match.certaintyLevel},${match.errorMargin},${match.evaluationCriteria}`).join("\n");
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "vip_results.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-function exportVIPToJSON() {
-  if (!vipData || vipData.length === 0) {
-    alert('Aucun donnée VIP à exporter.');
-    return;
-  }
-  const jsonContent = "data:text/json;charset=utf-8," + JSON.stringify(vipData);
-  const encodedUri = encodeURI(jsonContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "vip_results.json");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-// Dans DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('export-vip-csv').addEventListener('click', exportVIPToCSV);
-  document.getElementById('export-vip-json').addEventListener('click', exportVIPToJSON);
-});

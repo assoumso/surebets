@@ -501,6 +501,21 @@ button:hover {
   color: #721c24;
 }
 
+.low-prob {
+  background-color: #ff0000; /* rouge pour faible */
+  color: white;
+}
+
+.medium-prob {
+  background-color: #ffa500; /* orange pour moyen */
+  color: black;
+}
+
+.high-prob {
+  background-color: #008000; /* vert pour élevé */
+  color: white;
+}
+
 .prob-bar-container {
   width: 100%;
   background-color: #e9ecef;
@@ -539,3 +554,6 @@ button:hover {
   color: var(--button-text);
   margin: 10px;
 }
+.prob-green { color: #2E8B57; font-weight: bold; }
+.prob-yellow { color: #DAA520; font-weight: bold; }
+.prob-red { color: #CD5C5C; font-weight: bold; }

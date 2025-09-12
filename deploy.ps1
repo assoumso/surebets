@@ -52,17 +52,6 @@ if ($test) {
     Write-Host "⚠️  Serveur local non testé" -ForegroundColor Yellow
 }
 
-# Demander confirmation pour le déploiement
-Write-Host ""
-Write-Host "🚀 Prêt pour le déploiement sur Vercel!" -ForegroundColor Green
-Write-Host ""
-$confirmation = Read-Host "Voulez-vous continuer le déploiement? (y/n)"
-
-if ($confirmation -ne 'y' -and $confirmation -ne 'Y') {
-    Write-Host "❌ Déploiement annulé" -ForegroundColor Red
-    exit 0
-}
-
 # Connexion et déploiement
 Write-Host "🔐 Connexion à Vercel..." -ForegroundColor Blue
 try {
@@ -81,6 +70,5 @@ try {
 }
 
 Write-Host ""
-Write-Host "📖 Pour plus d'informations, consultez DEPLOYMENT_GUIDE.md" -ForegroundColor Cyan
+Write-Host "Pour plus d informations, consultez DEPLOYMENT_GUIDE.md" -ForegroundColor Cyan
 Write-Host ""
-pause

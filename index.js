@@ -218,24 +218,6 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         const probAnyGoals = 1 - (probNoGoalTeam1 * probNoGoalTeam2);
 
         // Remove TensorFlow import to fix compatibility issues on Vercel
-        async function refineWithAI(features) {
-          // Créer un modèle simple de régression
-          const model = tfl.sequential();
-          model.add(tfl.layers.dense({units: 1, inputShape: [features.length]}));
-          model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
-
-          // Données d'entraînement factices (à remplacer par des données réelles pour une vraie implémentation)
-          const xs = tf.tensor2d([features], [1, features.length]);
-          const ys = tf.tensor2d([[Math.random()]]); // Valeur cible aléatoire pour démo
-
-          await model.fit(xs, ys, {epochs: 10});
-
-          // Prédire
-          const prediction = model.predict(xs);
-          return (await prediction.data())[0];
-        }
-
-
         // Remplacer par un calcul statistique avancé simple sans bibliothèque externe
         let goalProb = (basicGoalProb + probAnyGoals + (bttsProb / 100)) / 3; // Moyenne pondérée comme exemple d'algorithme 'avancé'
     
@@ -264,52 +246,37 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         }
         correctScore = bestScore;
         correctScoreProb = Math.max(0, Math.min(100, refinedCorrectScoreProb));
-
+    
         // Calcul raffiné de la probabilité de buts avec Poisson (probabilité non-zéro buts)
         const probNoGoal = poissonProbability(0, adjustedLambdaTeam1) * poissonProbability(0, adjustedLambdaTeam2);
-        const refinedGoalProb = 1 - probNoGoal;
-
-        // Générateur aléatoire de buts basé sur distribution Poisson (algorithme inverse transform)
-        const randomPoisson = (lambda) => {
-          let L = Math.exp(-lambda);
-          let k = 0;
-          let p = 1;
-          while (p > L) {
-            k++;
-            p *= Math.random();
+        const refinedGoalProb = (1 - probNoGoal) * 100; // Convertir en pourcentage
+    
+        // Calcul analytique pour BTTS: P(both &gt; 0) = 1 - P(team1=0) - P(team2=0) + P(both=0)
+        const pTeam1Zero = poissonProbability(0, adjustedLambdaTeam1);
+        const pTeam2Zero = poissonProbability(0, adjustedLambdaTeam2);
+        const refinedBttsProb = (1 - pTeam1Zero - pTeam2Zero + pTeam1Zero * pTeam2Zero) * 100;
+    
+        // Calcul analytique pour Over 2.5
+        let overProb = 0;
+        for (let g1 = 0; g1 <= maxGoals; g1++) {
+          for (let g2 = 0; g2 <= maxGoals; g2++) {
+            if (g1 + g2 > 2) {
+              overProb += poissonProbability(g1, adjustedLambdaTeam1) * poissonProbability(g2, adjustedLambdaTeam2) * 100;
+            }
           }
-          return k - 1;
-        };
-
-        // Simulation Monte Carlo pour estimer BTTS et Over/Under de manière probabiliste
-        const numSimulations = 100; // Nombre de simulations pour précision statistique
-        let bttsCount = 0;
-        let overCount = 0;
-        for (let i = 0; i < numSimulations; i++) {
-          const goals1 = randomPoisson(adjustedLambdaTeam1);
-          const goals2 = randomPoisson(adjustedLambdaTeam2);
-          if (goals1 > 0 && goals2 > 0) bttsCount++;
-          if (goals1 + goals2 > 2.5) overCount++;
         }
-        const refinedBttsProb = (bttsCount / numSimulations) * 100;
-        const overProb = (overCount / numSimulations) * 100;
-
+    
         bttsProb = Math.max(0, Math.min(100, (bttsProb + refinedBttsProb) / 2)); // Fusion avec données historiques
-
+    
         const refinedOverProb = (team1Over + team2Over + overProb) / 3; // Intégration exemple
-
-
-
-        const aiRefinedProb = await refineWithAI([lambdaTeam1, lambdaTeam2, team1Over / 100, team2Over / 100, bttsProb / 100]);
-        goalProb = (goalProb + aiRefinedProb) / 2;
-
+    
         // Mise à jour goalProb avec tous les raffinements
-        goalProb = (basicGoalProb + probAnyGoals + refinedGoalProb + aiRefinedProb) / 4;
-
+        goalProb = (basicGoalProb + probAnyGoals + refinedGoalProb / 100 + refinedOverProb / 100) / 4; // Ajusté sans AI
+    
         // S'assurer que goalProb est entre 0 et 1
-        goalProb = Math.max(0, Math.min(1, goalProb));
+goalProb = Math.max(0, Math.min(1, goalProb));
 
-        let otherProb = 0;
+let otherProb = 0;
         $$('.predictionlabel').each((i, el) => {
           if ($$(el).text().trim() === 'Other') {
             otherProb = parseFloat($$(el).next().text().replace('%', ''));
@@ -442,41 +409,3 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
 }
 
 module.exports = { analyze, analyzeVIP };
-
-// Fonction pour analyser les résultats VIP avec optimisations
-async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
-  try {
-    const results = await analyze(dateStr);
-    
-    // Calculer un score pondéré pour l'analyse approfondie
-    const weightedData = results.map(item => {
-      // Convertir forme en score (W=3, D=1, L=0)
-      const formScore = (form) => form.split('').reduce((acc, res) => acc + (res === 'W' ? 3 : res === 'D' ? 1 : 0), 0) / 5;
-      const team1FormScore = formScore(item.team1Form || 'LLLLL');
-      const team2FormScore = formScore(item.team2Form || 'LLLLL');
-      const avgForm = (team1FormScore + team2FormScore) / 2;
-      
-      // Score pondéré: combinaison de probabilités et forme
-      const weightedScore = (
-        (100 - item.correctScoreProb) * 0.4 +  // layProb
-        item.bttsProb * 0.2 +
-        (item.goalProb * 100) * 0.2 +
-        item.firstHalfGoalProb * 0.1 +
-        avgForm * 0.1
-      ) / 100;
-      
-      return { ...item, weightedScore };
-    });
-    
-    // Trier par score pondéré descendant et prendre top 20
-    weightedData.sort((a, b) => b.weightedScore - a.weightedScore);
-    const top20 = weightedData.slice(0, 20);
-    
-    console.log(`Analyse VIP terminée: ${top20.length} matchs analysés`);
-    
-    return top20;
-  } catch (error) {
-    console.error(`Erreur lors de l'analyse VIP: ${error.message}`);
-    return [];
-  }
-}

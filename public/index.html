@@ -8,15 +8,15 @@
 </head>
 <body>
     <header id=\"home\">
-        <nav>
+        <nav aria-label="Menu principal">
             <ul>
-                <li><a href="#home">Accueil</a></li>
+                <li><a href="#home" aria-current="page">Accueil</a></li>
                 <li><a href="#controls">Analyse</a></li>
                 <li><a href="#vip-results">VIP</a></li>
-                <li><a href="#payment">Abonnements</a></li>
+                <li><a href="results.html" target="_blank">Résultats</a></li>
+                <li><a href="subscriptions.html">Abonnements</a></li>
             </ul>
-        </nav>
-        <header>
+        </nav>        <header>
           <h1>Baraka SYT - Prédictions de Matchs de Football</h1>
         </header>
         <div id="description">
@@ -68,45 +68,35 @@
                         <th>Probabilité BTTS</th>
                         <th>Probabilité de But</th>
                         <th>Prob. But 1ère MT (IA)</th>
-                        <th>Score Pondéré</th>
                     <th>Date</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </section>
+        <section id="past-vip-results" style="display: none;">
+            <h2>Résultats des Matchs VIP Passés</h2>
+            <table id="past-vip-table">
+                <thead>
+                    <tr>
+                        <th>Match</th>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Score Réel</th>
+                        <th>Score Prédit</th>
+                        <th>Probabilité Score Correct</th>
+                        <th>Probabilité Lay</th>
+                        <th>Probabilité BTTS</th>
+                        <th>Probabilité de But</th>
+                        <th>Prob. But 1ère MT (IA)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
         
         <p id="no-results" style="display: none;">Aucun résultat trouvé pour cette date. Essayez aujourd'hui ou demain.</p>
-        <section id="payment" style="display: none;">
-            <h2>Paiement VIP</h2>
-            <div id="payment-step1">
-                <h3>Étape 1: Sélection du plan</h3>
-                <label for="start-date">Date de début (JJ/MM/AAAA):</label>
-                <input type="date" id="start-date" required>
-                <select id="plan-select">
-                    <option value="1">1 jour - 500</option>
-                    <option value="4">4 jours - 1500</option>
-                    <option value="7">7 jours - 2500</option>
-                    <option value="30">30 jours - 10000</option>
-                </select>
-                <p id="end-date">Date de fin: </p>
-                <button id="next-step1">Suivant</button>
-            </div>
-            <div id="payment-step2" style="display: none;">
-                <h3>Étape 2: Paiement</h3>
-                <form id="payment-form">
-                    <div id="card-element"></div>
-                    <div id="card-errors" role="alert"></div>
-                    <button id="submit-payment">Payer</button>
-                </form>
-                <button id="back-step2">Retour</button>
-            </div>
-            <div id="payment-step3" style="display: none;">
-                <h3>Étape 3: Confirmation</h3>
-                <p>Paiement réussi! Votre abonnement VIP est actif.</p>
-                <button id="close-payment">Fermer</button>
-            </div>
-        </section>
+        
     </main>
     
     <script src="app.js"></script>

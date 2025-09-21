@@ -260,98 +260,20 @@ function displayResults(data) {
     
     // Gestion des liens de navigation
     document.querySelector('nav a[href="#home"]').addEventListener('click', (e) => {
-      e.preventDefault();
-      window.scrollTo(0, 0);
-    });
-    document.querySelector('nav a[href="#controls"]').addEventListener('click', (e) => {
-      e.preventDefault();
-      analyzeBtn.click();
-    });
-    document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (e) => {
-      e.preventDefault();
-      loadVIPResults(dateSelector.value);
-    });
-    document.querySelector('nav a[href="#payment"]').addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById('payment').style.display = 'block';
-    });
+  e.preventDefault();
+  window.scrollTo(0, 0);
+});
+document.querySelector('nav a[href="#controls"]').addEventListener('click', (e) => {
+  e.preventDefault();
+  analyzeBtn.click();
+});
+document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (e) => {
+  e.preventDefault();
+  loadVIPResults(dateSelector.value);
+});
 
-    // Logique de paiement
-    const stripe = Stripe('your_stripe_publishable_key'); // Remplacez par votre clé publique Stripe
-    const elements = stripe.elements();
-    const card = elements.create('card');
-    card.mount('#card-element');
 
-    card.on('change', (event) => {
-      const displayError = document.getElementById('card-errors');
-      displayError.textContent = event.error ? event.error.message : '';
-    });
-
-    const prices = {
-      1: 500,
-      4: 1500,
-      7: 2500,
-      30: 10000
-    };
-
-    function updateEndDate() {
-      const startDate = document.getElementById('start-date').value;
-      const days = parseInt(document.getElementById('plan-select').value);
-      if (startDate && days) {
-        const start = new Date(startDate);
-        const end = new Date(start);
-        end.setDate(end.getDate() + days);
-        const formattedEnd = end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        document.getElementById('end-date').textContent = `Date de fin: ${formattedEnd}`;
-      }
-    }
-
-    document.getElementById('start-date').addEventListener('change', updateEndDate);
-    document.getElementById('plan-select').addEventListener('change', updateEndDate);
-
-    document.getElementById('next-step1').addEventListener('click', () => {
-      const days = document.getElementById('plan-select').value;
-      const amount = prices[days] * 100; // en centimes
-      document.getElementById('payment-step1').style.display = 'none';
-      document.getElementById('payment-step2').style.display = 'block';
-      window.paymentAmount = amount;
-    });
-
-    document.getElementById('back-step2').addEventListener('click', () => {
-      document.getElementById('payment-step2').style.display = 'none';
-      document.getElementById('payment-step1').style.display = 'block';
-    });
-
-    document.getElementById('payment-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const { paymentMethod, error } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: card,
-      });
-      if (error) {
-        document.getElementById('card-errors').textContent = error.message;
-      } else {
-        const response = await fetch('/create-payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: window.paymentAmount }),
-        });
-        const { clientSecret } = await response.json();
-        const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: paymentMethod.id,
-        });
-        if (confirmError) {
-          document.getElementById('card-errors').textContent = confirmError.message;
-        } else {
-          document.getElementById('payment-step2').style.display = 'none';
-          document.getElementById('payment-step3').style.display = 'block';
-        }
-      }
-    });
-
-    document.getElementById('close-payment').addEventListener('click', () => {
-      document.getElementById('payment').style.display = 'none';
-    });
+    // Logique de paiement déplacée vers subscriptions.js
 
     // Charger le compteur de visites
     fetch('/visit-count')
@@ -412,3 +334,104 @@ function displayVIPResults(results) {
     vipResults.appendChild(row);
   });
 }
+
+function loadPastVIPResults() {
+  const pastSection = document.getElementById('past-vip-results');
+  pastSection.style.display = 'block';
+  
+  fetch('/past-vip-results')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des résultats passés');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Données des résultats VIP passés reçues:', data);
+      const tableBody = document.querySelector('#past-vip-table tbody');
+      tableBody.innerHTML = '';
+      
+      data.forEach(item => {
+        const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
+        const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
+        const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        
+        const layProb = 100 - item.correctScoreProb;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${matchName}</td>
+          <td>${item.date}</td>
+          <td>${item.time || 'N/A'}</td>
+          <td>${item.actualScore || 'N/A'}</td>
+          <td>${item.correctScore}</td>
+          <td>${item.correctScoreProb.toFixed(2)}%</td>
+          <td>${layProb.toFixed(2)}%</td>
+          <td>${item.bttsProb.toFixed(2)}%</td>
+          <td>${item.goalProb.toFixed(2)}%</td>
+          <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
+          <td>${item.weightedScore.toFixed(2)}%</td>
+        `;
+        tableBody.appendChild(row);
+      });
+      
+      if (data.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="10">Aucun résultat disponible pour les jours passés.</td></tr>';
+      }
+    })
+    .catch(error => {
+      console.error('Erreur lors du chargement des résultats VIP passés:', error);
+      const tableBody = document.querySelector('#past-vip-table tbody');
+      tableBody.innerHTML = '<tr><td colspan="10">Erreur lors du chargement des données.</td></tr>';
+    });
+}
+
+// Mettre à jour makeTableSortable pour accepter un ID de table
+function makeTableSortable(tableId = '#results-table') {
+  const table = document.querySelector(tableId);
+  const headers = table.querySelectorAll('th');
+  
+  headers.forEach((header, index) => {
+    header.addEventListener('click', () => {
+      const rows = Array.from(table.querySelector('tbody').querySelectorAll('tr'));
+      const isTime = index === 2; // Ajuster selon les colonnes
+      const isNumeric = [5,6,7,8,9].includes(index); // Ajuster
+      
+      const currentOrder = header.getAttribute('data-order') || 'asc';
+      const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+      
+      headers.forEach(h => {
+        h.removeAttribute('data-order');
+        h.classList.remove('sorted-asc', 'sorted-desc');
+      });
+      header.setAttribute('data-order', newOrder);
+      header.classList.add(newOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
+      
+      rows.sort((a, b) => {
+        const cellA = a.cells[index].textContent.trim();
+        const cellB = b.cells[index].textContent.trim();
+        
+        if (isTime) {
+          const timeToMinutes = (time) => time === 'N/A' ? 0 : time.split(':').reduce((acc, t) => 60 * acc + +t, 0);
+          const timeA = timeToMinutes(cellA);
+          const timeB = timeToMinutes(cellB);
+          return newOrder === 'asc' ? timeA - timeB : timeB - timeA;
+        } else if (isNumeric) {
+          const numA = parseFloat(cellA.replace('%', ''));
+          const numB = parseFloat(cellB.replace('%', ''));
+          return newOrder === 'asc' ? numA - numB : numB - numA;
+        } else {
+          return newOrder === 'asc' 
+            ? cellA.localeCompare(cellB) 
+            : cellB.localeCompare(cellA);
+        }
+      });
+      
+      rows.forEach(row => table.querySelector('tbody').appendChild(row));
+    });
+    
+    header.style.cursor = 'pointer';
+    header.title = 'Cliquer pour trier';
+  });
+}
+// Supprimer la fonction loadPastVIPResults car elle est maintenant dans results.js

@@ -34,8 +34,13 @@ app.get('/visit-count', (req, res) => {
   // Sauvegarde désactivée pour compatibilité Vercel
   res.json({ count: visitCount });
 });
+// Dans l'endpoint /analyze
 app.get('/analyze', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
+  // Validation de la date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ error: 'Date invalide. Format attendu: YYYY-MM-DD' });
+  }
   console.log(`Requête d'analyse reçue pour la date: ${date}`);
   
   try {
@@ -148,8 +153,13 @@ app.post('/analyze', async (req, res) => {
     res.status(500).json({ error: "Erreur pendant l'analyse" });
   }
 });
+// Dans l'endpoint /analyze-vip
 app.get('/analyze-vip', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
+  // Validation de la date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ error: 'Date invalide. Format attendu: YYYY-MM-DD' });
+  }
   console.log(`Requête d'analyse VIP reçue pour la date: ${date}`);
   
   try {
@@ -177,6 +187,11 @@ app.get('/analyze-vip', async (req, res) => {
       date: date
     });
   }
+});
+
+app.get('/past-vip-results', (req, res) => {
+  // TODO: Implémenter la logique réelle pour récupérer les résultats VIP passés
+  res.json([]);
 });
 
 if (require.main === module) {

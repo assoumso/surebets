@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const playwright = require('playwright');
+// Remove unused playwright require
+// const playwright = require('playwright');
 const axios = require('axios');
 const cheerio = require('cheerio');
 // Importer uniquement les modules TensorFlow.js nécessaires pour la compatibilité serverless
@@ -108,14 +109,21 @@ function validateMatchData(match) {
   return match;
 }
 
+// Remove TensorFlow requires and init function
+// const tf = require('@tensorflow/tfjs-core');
+// require('@tensorflow/tfjs-backend-cpu');
+// const tfl = require('@tensorflow/tfjs-layers');
+// let wasmBackendInitialized = false;
+
+// Remove initTensorFlowBackend function entirely
+// async function initTensorFlowBackend() { ... }
+
+// In analyze function, remove the init call
+// const tfInitialized = await initTensorFlowBackend();
+// if (!tfInitialized) { ... }
+
+// So the analyze function starts directly with:
 async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
-  // Initialiser TensorFlow avant toute utilisation
-  const tfInitialized = await initTensorFlowBackend();
-  if (!tfInitialized) {
-    console.error('Échec de l\'initialisation de TensorFlow, utilisation de calculs de fallback');
-    // Vous pouvez ajouter ici une logique de fallback si nécessaire
-  }
-  
   const inputDate = new Date(dateStr);
   const today = new Date();
   today.setHours(0, 0, 0, 0);

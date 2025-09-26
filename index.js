@@ -7,6 +7,7 @@ const cheerio = require('cheerio');
 // Importer uniquement les modules TensorFlow.js nécessaires pour la compatibilité serverless
 const tf = require('@tensorflow/tfjs');
 require('@tensorflow/tfjs-backend-cpu');
+const csv = require('csv-parser');
 // Importer le module layers pour les fonctions comme sequential, dense, etc.
 // const tfl = require('@tensorflow/tfjs-layers');
 // Importer WASM backend de manière conditionnelle pour éviter les problèmes sur Vercel

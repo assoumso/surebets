@@ -20,18 +20,7 @@ function loadPastVIPResults() {
             } else {
                 data.forEach(item => {
                     const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${item.match}</td>
-                        <td>${item.date}</td>
-                        <td>${item.time}</td>
-                        <td>${item.actualScore}</td>
-                        <td>${item.correctScore}</td>
-                        <td>${item.correctScoreProb.toFixed(2)}%</td>
-                        <td>${item.layProb.toFixed(2)}%</td>
-                        <td>${item.bttsProb.toFixed(2)}%</td>
-                        <td>${item.goalsProb.toFixed(2)}%</td>
-                        <td>${item.halfTimeGoalsProb.toFixed(2)}%</td>
-                    `;
+                    row.innerHTML = '<td>' + item.match + '</td><td>' + item.date + '</td><td>' + item.time + '</td><td>' + item.actualScore + '</td><td>' + item.correctScore + '</td><td>' + item.correctScoreProb.toFixed(2) + '%</td><td>' + item.layProb.toFixed(2) + '%</td><td>' + item.bttsProb.toFixed(2) + '%</td><td>' + item.goalsProb.toFixed(2) + '%</td><td>' + item.halfTimeGoalsProb.toFixed(2) + '%</td>';
                     tableBody.appendChild(row);
                 });
                 

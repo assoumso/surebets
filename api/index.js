@@ -3,9 +3,11 @@ const path = require('path');
 const { analyze, analyzeVIP } = require('../index');
 const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
+const cors = require('cors');
 
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -25,13 +27,19 @@ try {
   console.error('Error loading visit count:', error);
 }
 
+// Modified to increment and save on page load
 app.get('/', (req, res) => {
+  visitCount++;
+  try {
+    fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
+  } catch (error) {
+    console.error('Error saving visit count:', error);
+  }
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
+// Modified to just return count without incrementing
 app.get('/visit-count', (req, res) => {
-  visitCount++;
-  // Sauvegarde désactivée pour compatibilité Vercel
   res.json({ count: visitCount });
 });
 // Dans l'endpoint /analyze
@@ -190,8 +198,13 @@ app.get('/analyze-vip', async (req, res) => {
 });
 
 app.get('/past-vip-results', (req, res) => {
-  // TODO: Implémenter la logique réelle pour récupérer les résultats VIP passés
-  res.json([]);
+  try {
+    const results = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'results.json'), 'utf8'));
+    res.json(results);
+  } catch (error) {
+    console.error('Erreur lors du chargement de results.json:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement des résultats passés' });
+  }
 });
 
 if (require.main === module) {

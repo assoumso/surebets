@@ -189,9 +189,12 @@ app.get('/analyze-vip', async (req, res) => {
     res.json(results);
   } catch (error) {
     console.error(`Erreur pendant l'analyse VIP: ${error.message}`);
+    console.error(error.stack);
+    // Assurer que l'erreur est toujours au format JSON valide
     res.status(500).json({
       error: 'Erreur pendant l\'analyse VIP',
-      message: error.message,
+      message: error.message || 'Erreur inconnue',
+      stack: process.env.NODE_ENV === 'production' ? null : error.stack,
       date: date
     });
   }

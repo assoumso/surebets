@@ -378,8 +378,13 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
     
     // Journaliser les statistiques
     console.log(`Analyse terminée: ${validResults.length}/${results.length} matchs traités avec succès`);
-    fs.writeFileSync(cacheFile, JSON.stringify(validResults, null, 2), 'utf8');
-    console.log(`Cached results for ${dateStr}`);
+    try {
+      fs.writeFileSync(cacheFile, JSON.stringify(validResults, null, 2), 'utf8');
+      console.log(`Cached results for ${dateStr}`);
+    } catch (cacheWriteError) {
+      console.error(`Erreur lors de l'écriture du cache: ${cacheWriteError.message}`);
+      // Continuer sans mise en cache
+    }
     // Sauvegarde désactivée pour compatibilité Vercel
     return validResults;
 
@@ -434,17 +439,22 @@ function poissonCorrectScoreProb(team1Form, team2Form, team1Over, team2Over) {
 async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
   const startTime = Date.now();
   try {
-    const cacheFile = `vip_cache_${dateStr}.json`;
+    const cacheFile = path.join(__dirname, `vip_cache_${dateStr}.json`);
     const cacheAgeHours = 24;
     if (fs.existsSync(cacheFile)) {
       const stats = fs.statSync(cacheFile);
       const age = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
       if (age < cacheAgeHours) {
         console.log(`Chargement des résultats VIP depuis le cache pour ${dateStr}`);
-        const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-        const duration = Date.now() - startTime;
-        console.log(`Temps total d'analyse VIP (depuis cache): ${duration} ms`);
-        return cachedData;
+        try {
+          const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+          const duration = Date.now() - startTime;
+          console.log(`Temps total d'analyse VIP (depuis cache): ${duration} ms`);
+          return cachedData;
+        } catch (cacheError) {
+          console.error(`Erreur lors de la lecture du cache VIP: ${cacheError.message}`);
+          // Continuer avec l'analyse si le cache est corrompu
+        }
       }
     }
     const results = await analyze(dateStr) || [];
@@ -589,7 +599,7 @@ async function trainVIPModel() {
   // Load real data from CSV
   const data = [];
   await new Promise((resolve, reject) => {
-    fs.createReadStream('data/football_data.csv')
+    fs.createReadStream(path.join(__dirname, 'data', 'football_data.csv'))
       .pipe(csv())
       .on('data', (row) => {
         data.push({

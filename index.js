@@ -378,12 +378,14 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
     
     // Journaliser les statistiques
     console.log(`Analyse terminée: ${validResults.length}/${results.length} matchs traités avec succès`);
-    try {
-      fs.writeFileSync(cacheFile, JSON.stringify(validResults, null, 2), 'utf8');
-      console.log(`Cached results for ${dateStr}`);
-    } catch (cacheWriteError) {
-      console.error(`Erreur lors de l'écriture du cache: ${cacheWriteError.message}`);
-      // Continuer sans mise en cache
+    if (!process.env.VERCEL) {
+      try {
+        fs.writeFileSync(cacheFile, JSON.stringify(validResults, null, 2), 'utf8');
+        console.log(`Cached results for ${dateStr}`);
+      } catch (cacheWriteError) {
+        console.error(`Erreur lors de l'écriture du cache: ${cacheWriteError.message}`);
+        // Continuer sans mise en cache
+      }
     }
     // Sauvegarde désactivée pour compatibilité Vercel
     return validResults;
@@ -528,8 +530,10 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
     
     const duration = Date.now() - startTime;
     console.log(`Temps total d'analyse VIP: ${duration} ms`);
-    fs.writeFileSync(cacheFile, JSON.stringify(top15, null, 2));
-    console.log(`Résultats VIP mis en cache pour ${dateStr}`);
+    if (!process.env.VERCEL) {
+      fs.writeFileSync(cacheFile, JSON.stringify(top15, null, 2));
+      console.log(`Résultats VIP mis en cache pour ${dateStr}`);
+    }
     return top15;
   } catch (error) {
     console.error(`Erreur lors de l'analyse VIP: ${error.message}`);

@@ -600,6 +600,15 @@ async function trainVIPModel() {
   model.add(tf.layers.dense({units: 1, activation: 'sigmoid'}));
   model.compile({optimizer: 'adam', loss: 'meanSquaredError', metrics: ['mae']});
 
+  const weightsPath = './vip_model_weights.json';
+  if (fs.existsSync(weightsPath)) {
+    console.log('Chargement des poids du modèle depuis ' + weightsPath);
+    const weightsData = JSON.parse(fs.readFileSync(weightsPath, 'utf8'));
+    const weightTensors = weightsData.map(wd => tf.tensor(wd.data, wd.shape));
+    model.setWeights(weightTensors);
+    return model;
+  }
+
   // Load real data from CSV
   const data = [];
   await new Promise((resolve, reject) => {
@@ -650,6 +659,16 @@ async function trainVIPModel() {
 
   if (valMae < 0.1) {
     console.log('Précision cible atteinte.');
+  }
+
+  if (!process.env.VERCEL) {
+    console.log('Sauvegarde des poids du modèle dans ' + weightsPath);
+    const weights = model.weights.map(w => ({
+      name: w.name,
+      shape: w.shape,
+      data: Array.from(w.val.dataSync())
+    }));
+    fs.writeFileSync(weightsPath, JSON.stringify(weights, null, 2));
   }
 
   return model;

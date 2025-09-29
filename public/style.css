@@ -262,28 +262,43 @@ main {
     color: #555;
 }
 
-/* Style moderne et attractif pour le compteur de visiteurs */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+/* Style moderne et futuriste pour le compteur de visiteurs */
 #visit-counter {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
     text-align: center;
-    font-weight: bold;
-    color: #DAA520;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    color: #00ffcc;
     font-size: 1.2rem;
-    margin: 20px 0;
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+    padding: 15px 25px;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: neon-pulse 2s infinite ease-in-out;
 }
 
 #visit-counter:hover {
-    transform: scale(1.05);
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.8);
 }
 
 #visit-count {
-    color: #4CAF50;
+    color: #00ffcc;
     font-size: 1.5rem;
-    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 5px rgba(0, 255, 204, 0.7);
+}
+
+/* Animation neon pulse */
+@keyframes neon-pulse {
+    0% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(0, 255, 204, 0.8), 0 0 40px rgba(0, 255, 204, 0.6); }
+    100% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.5); }
 }
 
 #results-table tr:nth-child(even), #vip-table tr:nth-child(even) {

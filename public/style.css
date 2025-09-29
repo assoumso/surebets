@@ -264,44 +264,7 @@ main {
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
-/* Style moderne et futuriste pour le compteur de visiteurs */
-#visit-counter {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    text-align: center;
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 700;
-    color: #00ffcc;
-    font-size: 1.2rem;
-    padding: 15px 25px;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 255, 204, 0.5);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    animation: neon-pulse 2s infinite ease-in-out;
-}
-
-#visit-counter:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 30px rgba(0, 255, 204, 0.8);
-}
-
-#visit-count {
-    color: #00ffcc;
-    font-size: 1.5rem;
-    text-shadow: 0 0 5px rgba(0, 255, 204, 0.7);
-}
-
-/* Animation neon pulse */
-@keyframes neon-pulse {
-    0% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.5); }
-    50% { box-shadow: 0 0 30px rgba(0, 255, 204, 0.8), 0 0 40px rgba(0, 255, 204, 0.6); }
-    100% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.5); }
-}
-
-#results-table tr:nth-child(even), #vip-table tr:nth-child(even) {
+/* Style amélioré pour le compteur de visiteurs avec meilleure visibilité */\n#visit-counter {\n    position: fixed;\n    top: 20px;\n    right: 20px;\n    z-index: 1000;\n    text-align: center;\n    font-family: 'Orbitron', sans-serif;\n    font-weight: 700;\n    color: #00ffff;\n    font-size: 1.5rem;\n    padding: 20px 30px;\n    background: linear-gradient(135deg, #0a0820, #24213f, #1a1930);\n    border: 2px solid #00ffff;\n    border-radius: 15px;\n    box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);\n    transition: transform 0.3s ease, box-shadow 0.3s ease;\n    animation: neon-pulse 2s infinite ease-in-out;\n}\n\n#visit-counter:hover {\n    transform: scale(1.1);\n    box-shadow: 0 0 35px rgba(0, 255, 255, 0.9);\n}\n\n#visit-count {\n    color: #00ffff;\n    font-size: 2rem;\n    text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);\n}\n\n/* Animation neon pulse */\n@keyframes neon-pulse {\n    0% { box-shadow: 0 0 25px rgba(0, 255, 255, 0.6); }\n    50% { box-shadow: 0 0 35px rgba(0, 255, 255, 0.9), 0 0 45px rgba(0, 255, 255, 0.7); }\n    100% { box-shadow: 0 0 25px rgba(0, 255, 255, 0.6); }\n}\n\n#results-table tr:nth-child(even), #vip-table tr:nth-child(even) {
     background-color: #f8f9fa;
 }
 

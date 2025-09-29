@@ -288,7 +288,7 @@ function displayVIPResults(results) {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${matchName}</td>
-      <td>${match.league || 'Unknown'}</td>
+      <td>${match.certaintyLevel || 'Inconnu'}</td>
       <td>${match.time}</td>
       <td>${match.correctScore}</td>
       <td>${match.correctScoreProb.toFixed(2)}%</td>
@@ -325,10 +325,21 @@ function loadPastVIPResults() {
         
         const layProb = 100 - item.correctScoreProb;
         
+        const [home, away] = (item.correctScore || '0:0').split(':').map(Number);
+        const totalGoals = home + away;
+        let verdict = '';
+        if (totalGoals >= 2) {
+          verdict = 'over 0.5 et over 1.5';
+        } else if (totalGoals === 1) {
+          verdict = 'over 0.5';
+        } else if (totalGoals > 1) {
+          verdict = 'over 1.5';
+        }
+        
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${matchName}</td>
-          <td>${item.date}</td>
+          <td>${verdict}</td>
           <td>${item.time || 'N/A'}</td>
           <td>${item.actualScore || 'N/A'}</td>
           <td>${item.correctScore}</td>
@@ -343,13 +354,13 @@ function loadPastVIPResults() {
       });
       
       if (data.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="10">Aucun résultat disponible pour les jours passés.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="11">Aucun résultat disponible pour les jours passés.</td></tr>';
       }
     })
     .catch(error => {
       console.error('Erreur lors du chargement des résultats VIP passés:', error);
       const tableBody = document.querySelector('#past-vip-table tbody');
-      tableBody.innerHTML = '<tr><td colspan="10">Erreur lors du chargement des données.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="11">Erreur lors du chargement des données.</td></tr>';
     });
 }
 

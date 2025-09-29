@@ -4,6 +4,7 @@ const { analyze, analyzeVIP } = require('../index');
 const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
 const cors = require('cors');
+const seedrandom = require('seedrandom');
 
 
 const app = express();
@@ -29,13 +30,18 @@ try {
 
 // Modified to increment and save on page load
 app.get('/', (req, res) => {
+  // visitCount++; // Removed to avoid double counting, increment moved to client-side
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+app.post('/increment-visit', (req, res) => {
   visitCount++;
   try {
     fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
   } catch (error) {
     console.error('Error saving visit count:', error);
   }
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  res.sendStatus(200);
 });
 
 // Modified to just return count without incrementing
@@ -122,30 +128,31 @@ app.post('/create-payment-intent', express.json(), async (req, res) => {
 // Nouvel endpoint pour l'analyse IA avancée
 app.get('/api/advanced-analysis', (req, res) => {
   const matchId = req.query.matchId;
+  const rng = seedrandom(matchId || 'default-seed'); // Utiliser un seed basé sur matchId pour la cohérence
   // Simuler une analyse avancée avec IA
   const analysis = {
     matchId,
     detailedPredictions: {
-      winProbability: Math.random() * 100,
-      drawProbability: Math.random() * 100,
-      loseProbability: Math.random() * 100,
+      winProbability: rng() * 100,
+      drawProbability: rng() * 100,
+      loseProbability: rng() * 100,
       exactScoreProbabilities: {
-        "1:0": Math.random() * 20,
-        "2:0": Math.random() * 15,
-        "2:1": Math.random() * 10,
-        "0:0": Math.random() * 10,
-        "1:1": Math.random() * 15,
-        "0:1": Math.random() * 10,
-        "0:2": Math.random() * 5,
-        "1:2": Math.random() * 10,
-        "2:2": Math.random() * 5
+        "1:0": rng() * 20,
+        "2:0": rng() * 15,
+        "2:1": rng() * 10,
+        "0:0": rng() * 10,
+        "1:1": rng() * 15,
+        "0:1": rng() * 10,
+        "0:2": rng() * 5,
+        "1:2": rng() * 10,
+        "2:2": rng() * 5
       }
     },
-    aiConfidenceScore: Math.random() * 100,
+    aiConfidenceScore: rng() * 100,
     recommendedBets: [
-      { type: "BTTS", confidence: Math.random() * 100 },
-      { type: "Over 2.5", confidence: Math.random() * 100 },
-      { type: "1X", confidence: Math.random() * 100 }
+      { type: "BTTS", confidence: rng() * 100 },
+      { type: "Over 2.5", confidence: rng() * 100 },
+      { type: "1X", confidence: rng() * 100 }
     ]
   };
   res.json(analysis);

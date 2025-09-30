@@ -644,15 +644,7 @@ async function trainVIPModel() {
   const valXs = tf.tensor2d(valData.map(d => d.inputs));
   const valYs = tf.tensor2d(valData.map(d => [d.target]));
 
-  const history = await model.fit(trainXs, trainYs, {
-    epochs: 50,
-    batchSize: 64,
-    validationData: [valXs, valYs],
-    callbacks: tf.callbacks.earlyStopping({monitor: 'val_loss', patience: 10})
-  });
-
-  const valLoss = history.history.val_loss[history.history.val_loss.length - 1];
-  const valMae = history.history.val_mae[history.history.val_mae.length - 1];
+  const history = await model.fit(trainXs, trainYs, {epochs: 50, batchSize: 64, shuffle: false, validationData: [valXs, valYs], callbacks: tf.callbacks.earlyStopping({monitor: 'val_loss', patience: 10})}); const valLoss = history.history.val_loss[history.history.val_loss.length - 1]; const valMae = history.history.val_mae[history.history.val_mae.length - 1];
   console.log(`Entraînement terminé. Validation MAE: ${valMae}`);
   const duration = Date.now() - startTime;
   console.log(`Temps d'entraînement: ${duration} ms`);

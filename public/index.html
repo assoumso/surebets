@@ -23,7 +23,10 @@
             <p>BarakaSYT est une plateforme innovante pour l'analyse des prédictions de football uniquement pour le 0,5 but dans un match , offrant des insights avancés et des fonctionnalités VIP.</p>
             <p>BarakaSYT is an innovative platform for football prediction analysis, offering advanced insights and VIP features.</p>
         </div>
-        <p id=\"visit-counter\">Nombre de visites: <span id=\"visit-count\">0</span></p>
+        <div id="visit-counter" role="status" aria-label="Compteur de visiteurs">
+            <span class="counter-label">Utilisateurs connectés</span>
+            <span id="visit-count" class="counter-value">0</span>
+        </div>
         
     </header>
     <main>
@@ -56,12 +59,31 @@
             </table>
         </section>
         <section id="vip-results" style="display: none;">
-            <h2>Top 15 Prédictions VIP</h2>
+            <h2>Top 20 Prédictions VIP</h2>
+            <div class="vip-description">
+                <p><strong>🎯 Stratégie VIP Avancée - Analyse Multi-Dimensionnelle</strong></p>
+                <p><strong>Critères de base stricts :</strong></p>
+                <ul>
+                    <li>📊 <strong>Score de fiabilité minimum :</strong> 65%</li>
+                    <li>⚽ <strong>Probabilité de but minimum :</strong> 60%</li>
+                    <li>⏱️ <strong>Probabilité de but 1ère mi-temps minimum :</strong> 50%</li>
+                    <li>📉 <strong>Probabilité Lay maximum :</strong> 70%</li>
+                </ul>
+                <p><strong>🔬 Méthodes d'analyse avancées :</strong></p>
+                <ul>
+                    <li>📈 <strong>Analyse de Momentum :</strong> Cohérence des probabilités (≥60%)</li>
+                    <li>🤝 <strong>Analyse de Consensus :</strong> Accord entre modèles Elo, Glicko, Bayésien, Poisson (≥55%)</li>
+                    <li>⚖️ <strong>Analyse Risque-Récompense :</strong> Ratio favorable (≥0.8)</li>
+                    <li>🛡️ <strong>Analyse de Stabilité :</strong> Cohérence des prédictions (≥0.7)</li>
+                    <li>💎 <strong>Score de Confiance Global :</strong> Combinaison pondérée (≥68%)</li>
+                </ul>
+                <p><em>🚀 Seules les prédictions répondant à TOUS ces critères stricts sont affichées, garantissant les pronostics VIP les plus fiables du marché.</em></p>
+            </div>
             <table id="vip-table">
                 <thead>
                     <tr>
                         <th>Match</th>
-                        <th>Ligue</th>
+                        <th>Verdict final</th>
                         <th>Heure</th>
                         <th>Score Correct</th>
                         <th>Probabilité Score Correct</th>

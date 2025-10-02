@@ -137,12 +137,66 @@ main {
     box-shadow: 0 5px 25px rgba(0,0,0,0.15);
 }
 
-#results-table, #vip-table {
+/* Styles pour la description VIP */
+.vip-description {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #DAA520;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.vip-description p {
+    margin: 0 0 15px 0;
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.vip-description ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 15px 0;
+}
+
+.vip-description li {
+    padding: 8px 0;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    font-size: 0.95em;
+}
+
+.vip-description li:last-child {
+    border-bottom: none;
+}
+
+.vip-description li::before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.vip-description em {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9em;
+    display: block;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #dee2e6;
+}
+
+#results-table, #vip-table, #past-vip-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 25px;
     border-radius: 5px;
     overflow: hidden;
+    font-size: 0.9em;
 }
 #results-table, #vip-table, #past-vip-table {
     width: 100%;
@@ -214,41 +268,53 @@ main {
 
 /* Responsive design */
 @media (max-width: 768px) {
-  #past-vip-table {
-    font-size: 0.8em;
+  #past-vip-table, #vip-table, #results-table {
+    font-size: 0.7em;
+  }
+  
+  #vip-table th, #vip-table td, #past-vip-table th, #past-vip-table td, #results-table th, #results-table td {
+    padding: 4px;
+    font-size: 0.75em;
   }
   
   main {
     padding: 0.5em;
   }
+  
+  #vip-results h2, #past-vip-results h2 {
+    font-size: 1.2em;
+  }
 }
 
-#results-table th, #results-table td, #vip-table th, #vip-table td {
+#results-table th, #results-table td, #vip-table th, #vip-table td, #past-vip-table th, #past-vip-table td {
     border: 1px solid #e9ecef;
-    padding: 12px;
+    padding: 8px;
     text-align: left;
+    font-size: 0.85em;
 }
 
-#results-table th, #vip-table th {
+#results-table th, #vip-table th, #past-vip-table th {
     background: linear-gradient(to bottom, #FFD700, #DAA520);
     color: white;
     cursor: pointer;
     font-weight: bold;
     position: relative;
     transition: background 0.3s;
+    font-size: 0.8em;
+    text-align: center;
 }
 
-#results-table th:hover, #vip-table th:hover {
+#results-table th:hover, #vip-table th:hover, #past-vip-table th:hover {
     background: linear-gradient(to bottom, #DAA520, #B8860B);
 }
 
-#results-table th.sorted-asc:after {
+#results-table th.sorted-asc:after, #vip-table th.sorted-asc:after, #past-vip-table th.sorted-asc:after {
     content: ' \25B2';
     position: absolute;
     right: 8px;
 }
 
-#results-table th.sorted-desc:after {
+#results-table th.sorted-desc:after, #vip-table th.sorted-desc:after, #past-vip-table th.sorted-desc:after {
     content: ' \25BE';
     position: absolute;
     right: 8px;
@@ -264,11 +330,186 @@ main {
 
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
-/* Style amélioré pour le compteur de visiteurs avec meilleure visibilité */\n#visit-counter {\n    position: fixed;\n    top: 20px;\n    right: 20px;\n    z-index: 1000;\n    text-align: center;\n    font-family: 'Orbitron', sans-serif;\n    font-weight: 700;\n    color: #00ffff;\n    font-size: 1.5rem;\n    padding: 20px 30px;\n    background: linear-gradient(135deg, #0a0820, #24213f, #1a1930);\n    border: 2px solid #00ffff;\n    border-radius: 15px;\n    box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);\n    transition: transform 0.3s ease, box-shadow 0.3s ease;\n    animation: neon-pulse 2s infinite ease-in-out;\n}\n\n#visit-counter:hover {\n    transform: scale(1.1);\n    box-shadow: 0 0 35px rgba(0, 255, 255, 0.9);\n}\n\n#visit-count {\n    color: #00ffff;\n    font-size: 2rem;\n    text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);\n}\n\n/* Animation neon pulse */\n@keyframes neon-pulse {\n    0% { box-shadow: 0 0 25px rgba(0, 255, 255, 0.6); }\n    50% { box-shadow: 0 0 35px rgba(0, 255, 255, 0.9), 0 0 45px rgba(0, 255, 255, 0.7); }\n    100% { box-shadow: 0 0 25px rgba(0, 255, 255, 0.6); }\n}\n\n#results-table tr:nth-child(even), #vip-table tr:nth-child(even) {
-    background-color: #f8f9fa;
+/* Style futuriste high-tech pour le compteur de visiteurs */
+#visit-counter {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    text-align: center;
+    font-family: 'Orbitron', 'Courier New', monospace;
+    padding: 20px 30px;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+    border-radius: 15px;
+    box-shadow: 
+        0 0 30px rgba(0, 255, 255, 0.4),
+        inset 0 0 20px rgba(0, 255, 255, 0.1),
+        0 8px 25px rgba(0, 0, 0, 0.3);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    min-width: 220px;
+    backdrop-filter: blur(15px);
+    overflow: hidden;
 }
 
-#results-table tr:hover, #vip-table tr:hover {
+#visit-counter::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+    transform: rotate(45deg);
+    animation: tech-scan 3s linear infinite;
+    z-index: -1;
+}
+
+#visit-counter:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 
+        0 0 40px rgba(0, 255, 255, 0.6),
+        inset 0 0 30px rgba(0, 255, 255, 0.15),
+        0 12px 35px rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 255, 255, 0.5);
+}
+
+#visit-counter::after {
+    content: '📡';
+    display: block;
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    animation: tech-pulse 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.8));
+}
+
+.counter-label {
+    color: #00ffff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+    display: block;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    opacity: 0.9;
+}
+
+.counter-value {
+    color: #00ff88;
+    font-size: 2rem;
+    font-weight: 700;
+    text-shadow: 
+        0 0 15px rgba(0, 255, 136, 0.9),
+        0 0 30px rgba(0, 255, 136, 0.6),
+        0 0 45px rgba(0, 255, 136, 0.3);
+    letter-spacing: 2px;
+    display: block;
+    line-height: 1;
+    font-family: 'Orbitron', 'Courier New', monospace;
+    animation: tech-glow 2s ease-in-out infinite alternate;
+}
+
+/* Animations futuristes */
+@keyframes tech-scan {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+@keyframes tech-pulse {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% { 
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes tech-glow {
+    0% { 
+        text-shadow: 
+            0 0 15px rgba(0, 255, 136, 0.9),
+            0 0 30px rgba(0, 255, 136, 0.6),
+            0 0 45px rgba(0, 255, 136, 0.3);
+    }
+    100% { 
+        text-shadow: 
+            0 0 20px rgba(0, 255, 136, 1),
+            0 0 40px rgba(0, 255, 136, 0.8),
+            0 0 60px rgba(0, 255, 136, 0.4);
+    }
+}
+
+/* Version responsive futuriste pour mobile */
+@media (max-width: 768px) {
+    #visit-counter {
+        top: 15px;
+        right: 15px;
+        padding: 15px 20px;
+        font-size: 0.75rem;
+        min-width: 180px;
+        border-radius: 12px;
+    }
+    
+    #visit-counter::after {
+        font-size: 1.1rem;
+        margin-bottom: 6px;
+    }
+    
+    .counter-label {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        margin-bottom: 6px;
+    }
+    
+    .counter-value {
+        font-size: 1.5rem;
+        letter-spacing: 1.5px;
+    }
+}
+
+/* Mode haute activité futuriste */
+#visit-counter.high-traffic {
+    background: linear-gradient(135deg, #ff006e 0%, #8338ec 50%, #3a86ff 100%);
+    border-color: rgba(255, 0, 110, 0.5);
+    box-shadow: 
+        0 0 40px rgba(255, 0, 110, 0.4),
+        inset 0 0 30px rgba(255, 0, 110, 0.1),
+        0 12px 35px rgba(0, 0, 0, 0.4);
+}
+
+#visit-counter.high-traffic::before {
+    background: linear-gradient(45deg, transparent, rgba(255, 0, 110, 0.2), transparent);
+}
+
+#visit-counter.high-traffic .counter-label {
+    color: #ff006e;
+    text-shadow: 0 0 15px rgba(255, 0, 110, 0.9);
+}
+
+#visit-counter.high-traffic .counter-value {
+    color: #ffffff;
+    text-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.9),
+        0 0 40px rgba(255, 0, 110, 0.8),
+        0 0 60px rgba(131, 56, 236, 0.6);
+    animation: high-traffic-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes high-traffic-pulse {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+}
+
+#results-table tr:hover, #vip-table tr:hover, #past-vip-table tr:hover {
     background-color: #f1f3f5;
     transition: background-color 0.2s;
 }

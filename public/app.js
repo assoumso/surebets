@@ -228,19 +228,81 @@ document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (
     // Logique de paiement déplacée vers subscriptions.js
 
     // Charger le compteur de visites
-    fetch('/visit-count')
-      .then(response => response.json())
-      .then(data => {
-        const visitCountElement = document.getElementById('visit-count');
-        if (visitCountElement) {
-          visitCountElement.innerText = data.count;
+    if (!localStorage.getItem('visited')) {
+      fetch('/increment-visit', { method: 'POST' })
+        .then(() => {
+          localStorage.setItem('visited', 'true');
+          updateVisitCount();
+        })
+        .catch(error => console.error('Error incrementing visit count:', error));
+    }
+
+    function updateVisitCount() {
+      fetch('/visit-count')
+        .then(response => response.json())
+        .then(data => {
+          const visitCountElement = document.getElementById('visit-count');
+          if (visitCountElement) {
+            // Animation de comptage progressif
+            const currentCount = parseInt(visitCountElement.innerText.replace(/,/g, '')) || 0;
+            const targetCount = data.count;
+            
+            if (currentCount !== targetCount) {
+              animateCounter(visitCountElement, currentCount, targetCount, 1000);
+              addCounterPulse(); // Ajouter l'effet pulse
+            }
+            
+            // Ajouter la classe premium pour les comptes élevés
+            const visitCounter = document.getElementById('visit-counter');
+            if (visitCounter && targetCount > 1000) {
+              visitCounter.classList.add('high-traffic');
+            }
+          }
+          
+          const futuristicCountElement = document.getElementById('futuristic-count');
+          if (futuristicCountElement) {
+            futuristicCountElement.innerText = data.count;
+          }
+        })
+        .catch(error => console.error('Error fetching visit count:', error));
+    }
+    
+    // Fonction d'animation du compteur avec effet smooth
+    function animateCounter(element, start, end, duration) {
+      const startTime = performance.now();
+      const difference = end - start;
+      
+      function updateCounter(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function pour une animation plus naturelle
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentValue = Math.floor(start + (difference * easeOutQuart));
+        
+        element.innerText = currentValue.toLocaleString();
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateCounter);
         }
-        const futuristicCountElement = document.getElementById('futuristic-count');
-        if (futuristicCountElement) {
-          futuristicCountElement.innerText = data.count;
-        }
-      })
-      .catch(error => console.error('Error fetching visit count:', error));
+      }
+      
+      requestAnimationFrame(updateCounter);
+    }
+    
+    // Ajouter un effet de pulse quand le compteur change
+    function addCounterPulse() {
+      const visitCounter = document.getElementById('visit-counter');
+      if (visitCounter) {
+        visitCounter.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+          visitCounter.style.transform = 'scale(1)';
+        }, 200);
+      }
+    }
+
+    updateVisitCount();
+    setInterval(updateVisitCount, 5000); // Actualiser toutes les 5 secondes
 });
 
 
@@ -258,7 +320,7 @@ function loadVIPResults(date) {
   fetch('/analyze-vip?date=' + date)
     .then(response => response.json())
     .then(data => {
-      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 15);
+      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 20);
       displayVIPResults(vipData);
     })
     .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));
@@ -269,8 +331,21 @@ function displayVIPResults(results) {
   vipResults.style.display = 'block';
   const vipTableBody = document.querySelector('#vip-table tbody');
   vipTableBody.innerHTML = '';
+  
+  // Ajouter un message si aucun pronostic ne répond aux critères VIP
   if (results.length === 0) {
-    vipTableBody.innerHTML = '<tr><td colspan="11">Aucun résultat VIP disponible pour cette date.</td></tr>';
+    vipTableBody.innerHTML = `
+      <tr>
+        <td colspan="11" style="text-align: center; padding: 30px;">
+          <div style="color: #6c757d; font-size: 1.1em; margin-bottom: 10px;">
+            🔍 <strong>Aucun pronostic VIP disponible pour cette date</strong>
+          </div>
+          <div style="color: #868e96; font-size: 0.95em;">
+            Les matchs analysés ne répondent pas aux critères stricts de sélection VIP (fiabilité ≥ 65%, probabilité de but ≥ 60%)
+          </div>
+        </td>
+      </tr>
+    `;
     return;
   }
   results.forEach(match => {
@@ -285,18 +360,74 @@ function displayVIPResults(results) {
     const reliabilityValue = parseFloat(match.reliabilityScore) || 0;
     const reliabilityClass = getColorClass(reliabilityValue);
     
+    // **DÉTERMINER LE VERDICT FINAL** : 0,5 but ou 1,5 buts selon l'analyse
+    let verdictFinal = '';
+    let verdictIcon = '';
+    let verdictColor = '';
+    
+    const goalProb = parseFloat(match.goalProb) * 100;
+    const firstHalfGoalProb = parseFloat(match.firstHalfGoalProb);
+    const layProb = parseFloat(match.layProb);
+    const bttsProb = parseFloat(match.bttsProb);
+    const reliabilityScore = parseFloat(match.reliabilityScore);
+    
+    // **LOGIQUE AVANCÉE DE DÉCISION** : Basée sur l'analyse multi-dimensionnelle
+    let additionalInfo = '';
+    
+    if (reliabilityScore >= 75 && goalProb >= 75 && firstHalfGoalProb >= 65 && layProb <= 60) {
+      // 🔥 TRÈS HAUTE CONFIANCE : 1,5 buts
+      verdictFinal = '1,5 buts';
+      verdictIcon = '🔥';
+      verdictColor = '#dc3545'; // Rouge intense
+      
+      // Si très haute confiance, suggérer aussi 0,5 but comme option sûre
+      if (goalProb >= 80 && firstHalfGoalProb >= 70) {
+        additionalInfo = '<br><small style="color: #28a745; font-size: 0.8em;">✅ 0,5 but aussi recommandé</small>';
+      }
+    } else if (reliabilityScore >= 68 && goalProb >= 68 && firstHalfGoalProb >= 55 && layProb <= 65) {
+      // ⭐ HAUTE CONFIANCE : 1,5 buts
+      verdictFinal = '1,5 buts';
+      verdictIcon = '⭐';
+      verdictColor = '#ff6b35'; // Orange
+      
+      // Si haute confiance, mentionner 0,5 but comme option sécurisée
+      if (firstHalfGoalProb >= 60) {
+        additionalInfo = '<br><small style="color: #28a745; font-size: 0.8em;">✅ 0,5 but option sûre</small>';
+      }
+    } else if (reliabilityScore >= 65 && goalProb >= 60 && firstHalfGoalProb >= 50 && layProb <= 70) {
+      // ✅ CONFIANCE MODÉRÉE : 0,5 but (sécurisé)
+      verdictFinal = '0,5 but';
+      verdictIcon = '✅';
+      verdictColor = '#28a745'; // Vert
+      
+      // Si conditions sont bonnes, mentionner 1,5 buts comme option plus risquée
+      if (goalProb >= 65 && bttsProb >= 55) {
+        additionalInfo = '<br><small style="color: #ff6b35; font-size: 0.8em;">⭐ 1,5 buts possible</small>';
+      }
+    } else {
+      // ⚠️ PRUDENCE : 0,5 but (option la plus sûre)
+      verdictFinal = '0,5 but';
+      verdictIcon = '⚽';
+      verdictColor = '#007bff'; // Bleu
+      
+      // Même en prudence, si certaines conditions sont remplies, mentionner 1,5 buts
+      if (bttsProb >= 50 && goalProb >= 58) {
+        additionalInfo = '<br><small style="color: #ffc107; font-size: 0.8em;">💡 1,5 buts à considérer</small>';
+      }
+    }
+    
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td>${matchName}</td>
-      <td>${match.certaintyLevel || 'Inconnu'}</td>
-      <td>${match.time}</td>
-      <td>${match.correctScore}</td>
+      <td><strong>${matchName}</strong></td>
+      <td style="color: ${verdictColor}; font-weight: bold; font-size: 1.1em;">${verdictIcon} ${verdictFinal}${additionalInfo}</td>
+      <td><strong>${match.time}</strong></td>
+      <td><strong>${match.correctScore}</strong></td>
       <td>${match.correctScoreProb.toFixed(2)}%</td>
       <td>${match.layProb}%</td>
       <td>${match.bttsProb.toFixed(2)}%</td>
-      <td class="${goalProbClass}">${goalProbValue.toFixed(2)}%</td>
+      <td class="${goalProbClass}"><strong>${goalProbValue.toFixed(2)}%</strong></td>
       <td>${match.firstHalfGoalProb.toFixed(2)}%</td>
-      <td class="${reliabilityClass}">${reliabilityValue.toFixed(2)}%</td>
+      <td class="${reliabilityClass}" style="font-weight: bold; font-size: 1.1em;">${reliabilityValue.toFixed(2)}%</td>
       <td>${match.date}</td>
     `;
     vipTableBody.appendChild(row);

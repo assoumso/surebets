@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Modèle IA pour l'analyse avancée des matchs
 
@@ -218,7 +218,7 @@ app.get('/past-vip-results', (req, res) => {
 });
 
 if (require.main === module) {
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3001;
   app.listen(port, () => {
     console.log(`Serveur démarré sur le port ${port}`);
   });

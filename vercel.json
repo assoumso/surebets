@@ -11,8 +11,30 @@
   },
   "routes": [
     {
+      "src": "/style.css",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/app.js",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/results.js",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/subscriptions.js",
+      "dest": "/api/index.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/index.js"
+    }
+  ],
+  "builds": [
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
   ]
 }

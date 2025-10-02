@@ -27,7 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
         noResults.style.display = 'none';
         tableBody.innerHTML = '';
     
-        fetch('/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) }).then(response => response.json())
+        fetch('/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 // Masquer l'indicateur de chargement
                 loading.style.display = 'none';
@@ -230,7 +236,10 @@ document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (
     // Charger le compteur de visites
     if (!localStorage.getItem('visited')) {
       fetch('/increment-visit', { method: 'POST' })
-        .then(() => {
+        .then(response => {
+          if (!response.ok) {
+            console.warn('Failed to increment visit count:', response.status);
+          }
           localStorage.setItem('visited', 'true');
           updateVisitCount();
         })
@@ -239,7 +248,12 @@ document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (
 
     function updateVisitCount() {
       fetch('/visit-count')
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
         .then(data => {
           const visitCountElement = document.getElementById('visit-count');
           if (visitCountElement) {

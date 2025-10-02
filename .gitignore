@@ -80,3 +80,5 @@ build/
 # package-lock.json
 # yarn.lock
 .vercel
+
+// ...\n\n# Dynamic JSON files\ncache_*.json\nvip_cache_*.json\nvisitCount.json\nvip*.json\nresults.json

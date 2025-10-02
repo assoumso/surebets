@@ -34,12 +34,32 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
+// Route pour servir les fichiers statiques CSS et JS
+app.get('/style.css', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'style.css'));
+});
+
+app.get('/app.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'app.js'));
+});
+
+app.get('/results.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'results.js'));
+});
+
+app.get('/subscriptions.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'subscriptions.js'));
+});
+
 app.post('/increment-visit', (req, res) => {
   visitCount++;
-  try {
-    fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
-  } catch (error) {
-    console.error('Error saving visit count:', error);
+  // En production, utiliser un stockage en mémoire au lieu du système de fichiers
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
+    } catch (error) {
+      console.error('Error saving visit count:', error);
+    }
   }
   res.sendStatus(200);
 });
@@ -209,6 +229,10 @@ app.get('/analyze-vip', async (req, res) => {
 
 app.get('/past-vip-results', (req, res) => {
   try {
+    // En production, retourner des données par défaut car l'écriture sur disque n'est pas supportée
+    if (process.env.NODE_ENV === 'production') {
+      return res.json([]);
+    }
     const results = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'results.json'), 'utf8'));
     res.json(results);
   } catch (error) {

@@ -245,6 +245,9 @@ document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (
         })
         .catch(error => console.error('Error incrementing visit count:', error));
     }
+    
+    // Mise à jour en temps réel du compteur toutes les 30 secondes
+    setInterval(updateVisitCount, 30000);
 
     function updateVisitCount() {
       fetch('/visit-count')
@@ -332,12 +335,25 @@ let vipData = [];
 
 function loadVIPResults(date) {
   fetch('/analyze-vip?date=' + date)
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
+      if (!Array.isArray(data)) {
+        console.error('Données VIP invalides reçues:', data);
+        displayVIPResults([]);
+        return;
+      }
       vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 20);
       displayVIPResults(vipData);
     })
-    .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));
+    .catch(error => {
+      console.error('Erreur lors du chargement des résultats VIP:', error);
+      displayVIPResults([]);
+    });
 }
 
 function displayVIPResults(results) {
@@ -350,11 +366,11 @@ function displayVIPResults(results) {
   if (results.length === 0) {
     vipTableBody.innerHTML = `
       <tr>
-        <td colspan="11" style="text-align: center; padding: 30px;">
-          <div style="color: #6c757d; font-size: 1.1em; margin-bottom: 10px;">
+        <td colspan="11" style="text-align: center; padding: 25px;">
+          <div style="color: #6c757d; font-size: 1em; margin-bottom: 8px;">
             🔍 <strong>Aucun pronostic VIP disponible pour cette date</strong>
           </div>
-          <div style="color: #868e96; font-size: 0.95em;">
+          <div style="color: #868e96; font-size: 0.9em;">
             Les matchs analysés ne répondent pas aux critères stricts de sélection VIP (fiabilité ≥ 65%, probabilité de but ≥ 60%)
           </div>
         </td>

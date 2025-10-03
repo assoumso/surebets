@@ -17,20 +17,9 @@ const port = process.env.PORT || 3001;
 // Modèle IA pour l'analyse avancée des matchs
 
 
-let visitCount = 0;
-const countFile = path.join(__dirname, '..', 'visitCount.json');
 
-try {
-  if (fs.existsSync(countFile)) {
-    visitCount = JSON.parse(fs.readFileSync(countFile, 'utf8')).count;
-  }
-} catch (error) {
-  console.error('Error loading visit count:', error);
-}
 
-// Modified to increment and save on page load
 app.get('/', (req, res) => {
-  // visitCount++; // Removed to avoid double counting, increment moved to client-side
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
@@ -51,23 +40,9 @@ app.get('/subscriptions.js', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'subscriptions.js'));
 });
 
-app.post('/increment-visit', (req, res) => {
-  visitCount++;
-  // En production, utiliser un stockage en mémoire au lieu du système de fichiers
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
-    } catch (error) {
-      console.error('Error saving visit count:', error);
-    }
-  }
-  res.sendStatus(200);
-});
 
-// Modified to just return count without incrementing
-app.get('/visit-count', (req, res) => {
-  res.json({ count: visitCount });
-});
+
+
 // Dans l'endpoint /analyze
 app.get('/analyze', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];

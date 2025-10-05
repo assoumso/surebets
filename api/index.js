@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { analyze, analyzeVIP } = require('../index');
-const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
+// const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
 const cors = require('cors');
 const seedrandom = require('seedrandom');

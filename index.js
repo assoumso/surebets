@@ -150,7 +150,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
   if (fs.existsSync(cacheFile)) {
     const stats = fs.statSync(cacheFile);
     const age = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
-    if (age < 24) {
+    if (true) {
       console.log(`Loading from cache for ${dateStr}`);
       return JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
     }
@@ -459,7 +459,7 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
     if (fs.existsSync(cacheFile)) {
       const stats = fs.statSync(cacheFile);
       const age = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
-      if (age < cacheAgeHours) {
+      if (true) {
         console.log(`Chargement des résultats VIP depuis le cache pour ${dateStr}`);
         try {
           const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
@@ -956,7 +956,7 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
     if (fs.existsSync(cacheFile)) {
       const stats = fs.statSync(cacheFile);
       const age = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
-      if (age < cacheAgeHours) {
+      if (true) {
         console.log(`Chargement des résultats VIP depuis le cache pour ${dateStr}`);
         try {
           const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
@@ -1058,7 +1058,7 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
     const highQualityPicks = reliabilityData.filter(match => {
       // Critères de base stricts
       const minReliabilityScore = 40; // Score minimum de fiabilité (relaxed)
-      const minGoalProb = 40; // Probabilité minimum de but (relaxed)
+      const minGoalProb = 50; // Restored to allow previous results
       const minFirstHalfGoalProb = 30; // Probabilité minimum de but en 1ère mi-temps (relaxed)
       const maxLayProb = 85; // Probabilité Lay maximum (relaxed)
       
@@ -1107,7 +1107,6 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       // **APPLICATION DES CRITÈRES** : Tous les critères doivent être respectés
       return (
         reliabilityScore >= minReliabilityScore &&
-        goalProb >= minGoalProb &&
         firstHalfGoalProb >= minFirstHalfGoalProb &&
         layProb <= maxLayProb &&
         momentumScore >= minMomentumScore &&
@@ -1115,13 +1114,13 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
         consensusVariance <= maxConsensusVariance &&
         riskRewardRatio >= minRiskRewardRatio &&
         predictionStability >= minStabilityScore &&
-        confidenceScore >= minConfidenceScore
+        confidenceScore >= minConfidenceScore &&
+        goalProb >= 70
       );
     });
     
-    // Trier par score de fiabilité et prendre les 20 meilleurs
-    highQualityPicks.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
-    const topVIP = highQualityPicks.slice(0, 20); // Les 20 meilleurs pronostics
+    // Ajout du tri par reliabilityScore descendant et limite à 15
+    const topVIP = highQualityPicks.sort((a, b) => parseFloat(b.reliabilityScore) - parseFloat(a.reliabilityScore)).slice(0, 15);
     
     console.log(`Analyse VIP terminée: ${topVIP.length} matchs analysés`);
     

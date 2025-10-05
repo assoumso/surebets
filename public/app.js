@@ -261,7 +261,7 @@ function loadVIPResults(date) {
         displayVIPResults([]);
         return;
       }
-      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 20);
+      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 15);
       displayVIPResults(vipData);
     })
     .catch(error => {

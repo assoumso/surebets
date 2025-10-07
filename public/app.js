@@ -27,13 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         noResults.style.display = 'none';
         tableBody.innerHTML = '';
     
-        fetch('/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+        fetch('/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: selectedDate }) }).then(response => response.json())
             .then(data => {
                 // Masquer l'indicateur de chargement
                 loading.style.display = 'none';
@@ -233,7 +227,20 @@ document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (
 
     // Logique de paiement déplacée vers subscriptions.js
 
-    
+    // Charger le compteur de visites
+    fetch('/visit-count')
+      .then(response => response.json())
+      .then(data => {
+        const visitCountElement = document.getElementById('visit-count');
+        if (visitCountElement) {
+          visitCountElement.innerText = data.count;
+        }
+        const futuristicCountElement = document.getElementById('futuristic-count');
+        if (futuristicCountElement) {
+          futuristicCountElement.innerText = data.count;
+        }
+      })
+      .catch(error => console.error('Error fetching visit count:', error));
 });
 
 
@@ -249,25 +256,12 @@ let vipData = [];
 
 function loadVIPResults(date) {
   fetch('/analyze-vip?date=' + date)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-      if (!Array.isArray(data)) {
-        console.error('Données VIP invalides reçues:', data);
-        displayVIPResults([]);
-        return;
-      }
       vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 15);
       displayVIPResults(vipData);
     })
-    .catch(error => {
-      console.error('Erreur lors du chargement des résultats VIP:', error);
-      displayVIPResults([]);
-    });
+    .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));
 }
 
 function displayVIPResults(results) {
@@ -275,21 +269,8 @@ function displayVIPResults(results) {
   vipResults.style.display = 'block';
   const vipTableBody = document.querySelector('#vip-table tbody');
   vipTableBody.innerHTML = '';
-  
-  // Ajouter un message si aucun pronostic ne répond aux critères VIP
   if (results.length === 0) {
-    vipTableBody.innerHTML = `
-      <tr>
-        <td colspan="11" style="text-align: center; padding: 25px;">
-          <div style="color: #6c757d; font-size: 1em; margin-bottom: 8px;">
-            🔍 <strong>Aucun pronostic VIP disponible pour cette date</strong>
-          </div>
-          <div style="color: #868e96; font-size: 0.9em;">
-            Les matchs analysés ne répondent pas aux critères stricts de sélection VIP (fiabilité ≥ 65%, probabilité de but ≥ 60%)
-          </div>
-        </td>
-      </tr>
-    `;
+    vipTableBody.innerHTML = '<tr><td colspan="11">Aucun résultat VIP disponible pour cette date.</td></tr>';
     return;
   }
   results.forEach(match => {
@@ -304,74 +285,18 @@ function displayVIPResults(results) {
     const reliabilityValue = parseFloat(match.reliabilityScore) || 0;
     const reliabilityClass = getColorClass(reliabilityValue);
     
-    // **DÉTERMINER LE VERDICT FINAL** : 0,5 but ou 1,5 buts selon l'analyse
-    let verdictFinal = '';
-    let verdictIcon = '';
-    let verdictColor = '';
-    
-    const goalProb = parseFloat(match.goalProb) * 100;
-    const firstHalfGoalProb = parseFloat(match.firstHalfGoalProb);
-    const layProb = parseFloat(match.layProb);
-    const bttsProb = parseFloat(match.bttsProb);
-    const reliabilityScore = parseFloat(match.reliabilityScore);
-    
-    // **LOGIQUE AVANCÉE DE DÉCISION** : Basée sur l'analyse multi-dimensionnelle
-    let additionalInfo = '';
-    
-    if (reliabilityScore >= 75 && goalProb >= 75 && firstHalfGoalProb >= 65 && layProb <= 60) {
-      // 🔥 TRÈS HAUTE CONFIANCE : 1,5 buts
-      verdictFinal = '1,5 buts';
-      verdictIcon = '🔥';
-      verdictColor = '#dc3545'; // Rouge intense
-      
-      // Si très haute confiance, suggérer aussi 0,5 but comme option sûre
-      if (goalProb >= 80 && firstHalfGoalProb >= 70) {
-        additionalInfo = '<br><small style="color: #28a745; font-size: 0.8em;">✅ 0,5 but aussi recommandé</small>';
-      }
-    } else if (reliabilityScore >= 68 && goalProb >= 68 && firstHalfGoalProb >= 55 && layProb <= 65) {
-      // ⭐ HAUTE CONFIANCE : 1,5 buts
-      verdictFinal = '1,5 buts';
-      verdictIcon = '⭐';
-      verdictColor = '#ff6b35'; // Orange
-      
-      // Si haute confiance, mentionner 0,5 but comme option sécurisée
-      if (firstHalfGoalProb >= 60) {
-        additionalInfo = '<br><small style="color: #28a745; font-size: 0.8em;">✅ 0,5 but option sûre</small>';
-      }
-    } else if (reliabilityScore >= 65 && goalProb >= 60 && firstHalfGoalProb >= 50 && layProb <= 70) {
-      // ✅ CONFIANCE MODÉRÉE : 0,5 but (sécurisé)
-      verdictFinal = '0,5 but';
-      verdictIcon = '✅';
-      verdictColor = '#28a745'; // Vert
-      
-      // Si conditions sont bonnes, mentionner 1,5 buts comme option plus risquée
-      if (goalProb >= 65 && bttsProb >= 55) {
-        additionalInfo = '<br><small style="color: #ff6b35; font-size: 0.8em;">⭐ 1,5 buts possible</small>';
-      }
-    } else {
-      // ⚠️ PRUDENCE : 0,5 but (option la plus sûre)
-      verdictFinal = '0,5 but';
-      verdictIcon = '⚽';
-      verdictColor = '#007bff'; // Bleu
-      
-      // Même en prudence, si certaines conditions sont remplies, mentionner 1,5 buts
-      if (bttsProb >= 50 && goalProb >= 58) {
-        additionalInfo = '<br><small style="color: #ffc107; font-size: 0.8em;">💡 1,5 buts à considérer</small>';
-      }
-    }
-    
     const row = document.createElement('tr');
     row.innerHTML = `
-      <td><strong>${matchName}</strong></td>
-      <td style="color: ${verdictColor}; font-weight: bold; font-size: 1.1em;">${verdictIcon} ${verdictFinal}${additionalInfo}</td>
-      <td><strong>${match.time}</strong></td>
-      <td><strong>${match.correctScore}</strong></td>
+      <td>${matchName}</td>
+      <td>${String(match.prediction || '0,5').replace('.', ',')}</td>
+      <td>${match.time}</td>
+      <td>${match.correctScore}</td>
       <td>${match.correctScoreProb.toFixed(2)}%</td>
       <td>${match.layProb}%</td>
       <td>${match.bttsProb.toFixed(2)}%</td>
-      <td class="${goalProbClass}"><strong>${goalProbValue.toFixed(2)}%</strong></td>
+      <td class="${goalProbClass}">${goalProbValue.toFixed(2)}%</td>
       <td>${match.firstHalfGoalProb.toFixed(2)}%</td>
-      <td class="${reliabilityClass}" style="font-weight: bold; font-size: 1.1em;">${reliabilityValue.toFixed(2)}%</td>
+      <td class="${reliabilityClass}">${reliabilityValue.toFixed(2)}%</td>
       <td>${match.date}</td>
     `;
     vipTableBody.appendChild(row);
@@ -400,21 +325,10 @@ function loadPastVIPResults() {
         
         const layProb = 100 - item.correctScoreProb;
         
-        const [home, away] = (item.correctScore || '0:0').split(':').map(Number);
-        const totalGoals = home + away;
-        let verdict = '';
-        if (totalGoals >= 2) {
-          verdict = 'over 0.5 et over 1.5';
-        } else if (totalGoals === 1) {
-          verdict = 'over 0.5';
-        } else if (totalGoals > 1) {
-          verdict = 'over 1.5';
-        }
-        
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${matchName}</td>
-          <td>${verdict}</td>
+          <td>${item.date}</td>
           <td>${item.time || 'N/A'}</td>
           <td>${item.actualScore || 'N/A'}</td>
           <td>${item.correctScore}</td>
@@ -429,13 +343,13 @@ function loadPastVIPResults() {
       });
       
       if (data.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="11">Aucun résultat disponible pour les jours passés.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="10">Aucun résultat disponible pour les jours passés.</td></tr>';
       }
     })
     .catch(error => {
       console.error('Erreur lors du chargement des résultats VIP passés:', error);
       const tableBody = document.querySelector('#past-vip-table tbody');
-      tableBody.innerHTML = '<tr><td colspan="11">Erreur lors du chargement des données.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="10">Erreur lors du chargement des données.</td></tr>';
     });
 }
 

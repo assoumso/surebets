@@ -1,156 +1,95 @@
-# BarakaSYT - Prédictions de Football
+# BarakaSYT - Prédictions Football IA
 
-Plateforme innovante d'analyse des prédictions de football pour le marché spécifique du 0,5 but dans un match.
+Application de prédictions de football avec analyse avancée basée sur l'IA et la distribution de Poisson.
 
-## 🚀 Fonctionnalités Principales
+## Fonctionnalités
 
-- **Analyse Avancée**: Système multi-modèles combinant statistiques classiques et machine learning
-- **Prédictions VIP**: Top 20 des meilleures prédictions avec scores de fiabilité
-- **Interface Moderne**: Design responsive avec thème clair/sombre
-- **Multi-modèles ML**: Random Forest, SVM, k-NN, Stacking, Monte Carlo
-- **Export CSV**: Téléchargement des prédictions au format CSV
-- **Système de Paiement**: Intégration Stripe pour les abonnements VIP
+- 🔮 **Prédictions de score exact** avec probabilités
+- 🤖 **Analyse IA** pour la probabilité de but
+- 📊 **Distribution de Poisson** pour des prédictions précises
+- ⭐ **Section VIP** avec matchs sélectionnés et colonne **Prediction** (0.5 ou 1.5)
+- 📈 **Statistiques BTTS** (Both Teams To Score)
+- 💾 **Export CSV** des résultats
+- 🔒 **Résultats stabilisés** - Les analyses restent identiques même pour les matchs en cours
+- ⚡ **Cache optimisé** - Performances améliorées avec système de mise en cache intelligent
 
-## 📊 Modèles de Prédiction
+## Stack Technique
 
-### Modèles Classiques
-- Score Correct
-- Lay Betting  
-- BTTS (Both Teams To Score)
-- Probabilité de But
-- But 1ère Mi-temps
+- **Backend**: Node.js, Express
+- **Frontend**: HTML5, CSS3, JavaScript Vanilla
+- **Scraping**: Playwright
+- **Déploiement**: Vercel
 
-### Machine Learning
-- **Random Forest**: Classification d'ensemble (3%)
-- **SVM**: Support Vector Machine (3%)
-- **k-NN**: k-Nearest Neighbors (3%)
-- **Stacking Ensemble**: Combinaison optimisée (15%)
-- **Monte Carlo**: Simulation probabiliste (12%)
+## Installation Locale
 
-📖 Pour plus de détails, voir: [PREDICTION_PIPELINE.md](PREDICTION_PIPELINE.md)
-
-## 🛠️ Installation
-
-### Prérequis
-- Node.js 14+ 
-- npm ou yarn
-
-### Installation Rapide
 ```bash
-# Cloner le repository
-git clone [url]
+# Cloner le projet
+git clone [URL_DU_REPO]
 cd BarakaSYT
 
 # Installer les dépendances
 npm install
 
-# Lancer le serveur
-node index.js
-
-# Ouvrir dans le navigateur
-# http://localhost:3000
+# Lancer l'application
+npm start
 ```
 
-## 📱 Utilisation
+L'application sera accessible sur `http://localhost:3000`
 
-1. **Accueil**: Naviguez vers la page d'accueil
-2. **Sélection Date**: Choisissez la date des matchs à analyser
-3. **Lancer Analyse**: Cliquez sur "Analyser"
-4. **Résultats**: Consultez les prédictions classiques
-5. **VIP**: Accédez aux Top 20 prédictions VIP
-6. **Exporter**: Téléchargez les résultats en CSV
+## Déploiement sur Vercel
 
-## 🎯 Système de Scoring
+### Méthode 1: CLI Vercel (Recommandé)
 
-Le score de fiabilité combine 10 modèles différents:
-- Score de fiabilité global (0-100%)
-- Niveau de certitude (Faible/Moyen/Haut/Très Haut)
-- Détails des modèles utilisés
-- Historique des performances
+1. **Installer Vercel CLI** :
+   ```bash
+   npm i -g vercel
+   ```
 
-## 💳 Système VIP
+2. **Se connecter à Vercel** :
+   ```bash
+   vercel login
+   ```
 
-### Abonnements Disponibles
-- **1 Semaine**: 5€
-- **1 Mois**: 15€
-- **3 Mois**: 40€
-- **1 An**: 150€
+3. **Déployer** :
+   ```bash
+   vercel --prod
+   ```
 
-### Fonctionnalités VIP
-- Accès aux 20 meilleures prédictions
-- Scores de fiabilité détaillés
-- Historique des résultats
-- Support prioritaire
+### Méthode 2: Interface Web
 
-## 🔧 Configuration
+1. **Pousser le code sur GitHub**
+2. **Connecter le repo sur [vercel.com](https://vercel.com)**
+3. **Déployer automatiquement**
 
-### Variables d'Environnement
-Créez un fichier `.env` basé sur `.env.example`:
+### Configuration Requise
+
+Le fichier `vercel.json` est déjà configuré pour le déploiement. Aucune action supplémentaire n'est nécessaire.
+
+## Scripts NPM
+
+- `npm start` : Lancer en production
+- `npm run dev` : Mode développement
+- `npm run build` : Build (simulé)
+
+## Variables d'Environnement
+
+Aucune variable d'environnement n'est requise pour le fonctionnement de base.
+
+## Structure du Projet
+
 ```
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PUBLISHABLE_KEY=pk_test_...
-PORT=3000
-```
-
-### Fichiers de Configuration
-- `data/football_data.csv`: Données d'entraînement ML
-- `vip_model_weights.json`: Poids des modèles
-- `cache_*.json`: Cache des résultats
-
-## 📊 API Endpoints
-
-### Principaux Endpoints
-- `GET /`: Page d'accueil
-- `GET /analyze?date=YYYY-MM-DD`: Analyse des matchs
-- `GET /analyze-vip?date=YYYY-MM-DD`: Prédictions VIP
-- `POST /create-checkout-session`: Création session paiement
-- `GET /past-vip-results`: Historique VIP
-
-## 🧪 Tests
-
-```bash
-# Lancer les tests
-npm test
-
-# Tester individuellement
-node test.js
+BarakaSYT/
+├── public/           # Fichiers statiques
+│   ├── index.html   # Interface principale
+│   ├── app.js       # Logique frontend
+│   └── style.css    # Styles
+├── server.js        # Serveur Express
+├── index.js         # Scraping des données
+├── results.json     # Données des matchs
+├── vercel.json      # Configuration Vercel
+└── package.json     # Dépendances
 ```
 
-## 📈 Performance
+## Support
 
-- **Temps d'analyse**: ~2-3 secondes pour 50 matchs
-- **Mémoire**: < 100MB
-- **Scalabilité**: Supporte 500+ matchs simultanés
-- **Précision**: Amélioration continue via reinforcement learning
-
-## 🛡️ Sécurité
-
-- Validation stricte des entrées
-- Gestion robuste des erreurs
-- Aucune dépendance native
-- Protection contre les injections
-- Chiffrement des paiements (Stripe)
-
-## 🤝 Contribution
-
-1. Fork le projet
-2. Créez une branche (`git checkout -b feature/AmazingFeature`)
-3. Commitez vos changements (`git commit -m 'Add AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
-
-## 📝 License
-
-Ce projet est sous license MIT. Voir le fichier `LICENSE` pour plus de détails.
-
-## 📞 Support
-
-- **Email**: support@barakasyt.com
-- **Documentation**: [PREDICTION_PIPELINE.md](PREDICTION_PIPELINE.md)
-- **Issues**: GitHub Issues
-
----
-
-**Développé avec ❤️ par l'équipe BarakaSYT**
-
-*Dernière mise à jour: $(date)*
+Pour toute question ou problème, ouvrez une issue sur le repository GitHub.

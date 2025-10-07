@@ -1,10 +1,9 @@
 const express = require('express');
 const path = require('path');
 const { analyze, analyzeVIP } = require('../index');
-// const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
+const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
 const cors = require('cors');
-const seedrandom = require('seedrandom');
 
 
 const app = express();
@@ -12,37 +11,37 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Modèle IA pour l'analyse avancée des matchs
 
 
+let visitCount = 0;
+const countFile = path.join(__dirname, '..', 'visitCount.json');
 
+try {
+  if (fs.existsSync(countFile)) {
+    visitCount = JSON.parse(fs.readFileSync(countFile, 'utf8')).count;
+  }
+} catch (error) {
+  console.error('Error loading visit count:', error);
+}
 
+// Modified to increment and save on page load
 app.get('/', (req, res) => {
+  visitCount++;
+  try {
+    fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
+  } catch (error) {
+    console.error('Error saving visit count:', error);
+  }
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-// Route pour servir les fichiers statiques CSS et JS
-app.get('/style.css', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'style.css'));
+// Modified to just return count without incrementing
+app.get('/visit-count', (req, res) => {
+  res.json({ count: visitCount });
 });
-
-app.get('/app.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'app.js'));
-});
-
-app.get('/results.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'results.js'));
-});
-
-app.get('/subscriptions.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'subscriptions.js'));
-});
-
-
-
-
 // Dans l'endpoint /analyze
 app.get('/analyze', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
@@ -123,31 +122,30 @@ app.post('/create-payment-intent', express.json(), async (req, res) => {
 // Nouvel endpoint pour l'analyse IA avancée
 app.get('/api/advanced-analysis', (req, res) => {
   const matchId = req.query.matchId;
-  const rng = seedrandom(matchId || 'default-seed'); // Utiliser un seed basé sur matchId pour la cohérence
   // Simuler une analyse avancée avec IA
   const analysis = {
     matchId,
     detailedPredictions: {
-      winProbability: rng() * 100,
-      drawProbability: rng() * 100,
-      loseProbability: rng() * 100,
+      winProbability: Math.random() * 100,
+      drawProbability: Math.random() * 100,
+      loseProbability: Math.random() * 100,
       exactScoreProbabilities: {
-        "1:0": rng() * 20,
-        "2:0": rng() * 15,
-        "2:1": rng() * 10,
-        "0:0": rng() * 10,
-        "1:1": rng() * 15,
-        "0:1": rng() * 10,
-        "0:2": rng() * 5,
-        "1:2": rng() * 10,
-        "2:2": rng() * 5
+        "1:0": Math.random() * 20,
+        "2:0": Math.random() * 15,
+        "2:1": Math.random() * 10,
+        "0:0": Math.random() * 10,
+        "1:1": Math.random() * 15,
+        "0:1": Math.random() * 10,
+        "0:2": Math.random() * 5,
+        "1:2": Math.random() * 10,
+        "2:2": Math.random() * 5
       }
     },
-    aiConfidenceScore: rng() * 100,
+    aiConfidenceScore: Math.random() * 100,
     recommendedBets: [
-      { type: "BTTS", confidence: rng() * 100 },
-      { type: "Over 2.5", confidence: rng() * 100 },
-      { type: "1X", confidence: rng() * 100 }
+      { type: "BTTS", confidence: Math.random() * 100 },
+      { type: "Over 2.5", confidence: Math.random() * 100 },
+      { type: "1X", confidence: Math.random() * 100 }
     ]
   };
   res.json(analysis);
@@ -204,10 +202,6 @@ app.get('/analyze-vip', async (req, res) => {
 
 app.get('/past-vip-results', (req, res) => {
   try {
-    // En production, retourner des données par défaut car l'écriture sur disque n'est pas supportée
-    if (process.env.NODE_ENV === 'production') {
-      return res.json([]);
-    }
     const results = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'results.json'), 'utf8'));
     res.json(results);
   } catch (error) {
@@ -217,7 +211,7 @@ app.get('/past-vip-results', (req, res) => {
 });
 
 if (require.main === module) {
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 3000;
   app.listen(port, () => {
     console.log(`Serveur démarré sur le port ${port}`);
   });

@@ -8,17 +8,42 @@ const cheerio = require('cheerio');
 const tf = require('@tensorflow/tfjs');
 require('@tensorflow/tfjs-backend-cpu');
 const csv = require('csv-parser');
+// Importer le module layers pour les fonctions comme sequential, dense, etc.
+// const tfl = require('@tensorflow/tfjs-layers');
+// Importer WASM backend de manière conditionnelle pour éviter les problèmes sur Vercel
+let wasmBackendInitialized = false;
 
-// Ajouter l'import du système de validation
-const ValidationSystem = require('./validation_system');
-
-// Initialiser le système de validation (optionnel et non-bloquant)
-let validationSystem = null;
-try {
-  validationSystem = new ValidationSystem();
-  console.log('✅ Système de validation initialisé');
-} catch (error) {
-  console.warn('⚠️ Système de validation non disponible:', error.message);
+// Fonction pour initialiser le backend WASM si nécessaire
+async function initTensorFlowBackend() {
+  try {
+    // Vérifier si nous sommes dans un environnement Vercel
+    const isVercel = process.env.VERCEL;
+    
+    // Utiliser le backend CPU par défaut
+    await tf.setBackend('cpu');
+    
+    // Commenter temporairement l'initialisation WASM pour éviter les erreurs de chemin sur Windows
+    // if (!isVercel && !wasmBackendInitialized) {
+    //   try {
+    //     // Charger le backend WASM dynamiquement pour éviter les problèmes sur Vercel
+    //     const tfjs_wasm = require('@tensorflow/tfjs-backend-wasm');
+    //     await tfjs_wasm.setWasmPaths(
+    //       'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/'
+    //     );
+    //     await tf.setBackend('wasm');
+    //     wasmBackendInitialized = true;
+    //     console.log('TensorFlow.js WASM backend initialisé avec succès');
+    //   } catch (wasmError) {
+    //     console.warn('Impossible d\'initialiser le backend WASM, utilisation du backend CPU:', wasmError.message);
+    //   }
+    // }
+    
+    console.log('TensorFlow.js initialisé avec le backend:', tf.getBackend());
+    return true;
+  } catch (error) {
+    console.error('Erreur lors de l\'initialisation de TensorFlow.js:', error);
+    return false;
+  }
 }
 
 const urlMap = {
@@ -382,84 +407,6 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
   }
 }
 
-// Nouvelle fonction d'analyse pour under 2.5 buts à la mi-temps
-// VIP analysis function
-async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
-  const startTime = Date.now();
-  try {
-    const cacheFile = path.join(__dirname, `vip_cache_${dateStr}.json`);
-    const cacheAgeHours = 24;
-
-    const inputDate = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    inputDate.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor((inputDate - today) / (1000 * 60 * 60 * 24));
-
-    if (fs.existsSync(cacheFile)) {
-      console.log(`Chargement des résultats VIP depuis le cache pour ${dateStr}`);
-      try {
-        const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-        const duration = Date.now() - startTime;
-        console.log(`Temps total d'analyse VIP (depuis cache): ${duration} ms`);
-        return cachedData;
-      } catch (cacheError) {
-        console.error(`Erreur lors de la lecture du cache VIP: ${cacheError.message}`);
-        // Continuer avec l'analyse si le cache est corrompu
-      }
-    }
-    const results = await analyze(dateStr) || [];
-    
-    if (!results || !Array.isArray(results) || results.length === 0) {
-      console.warn(`Aucun résultat valide pour l'analyse VIP à la date ${dateStr}`);
-      return [];
-    }
-    
-    // Train the model once outside the loop
-    const vipModel = await createFixedVIPModel();
-    const under25Model = await getUnder25Model(); // Charger le modèle under 2.5 pour intégration
-    
-    const reliabilityData = await Promise.all(results.map(async (item) => {
-      const lay = isNaN(parseFloat(item.layProb)) ? 0 : parseFloat(item.layProb) / 100;
-      const goal = isNaN(parseFloat(item.goalProb)) ? 0 : parseFloat(item.goalProb);
-      const btts = isNaN(parseFloat(item.bttsProb)) ? 0 : parseFloat(item.bttsProb) / 100;
-      const poisson = item.poissonProb !== undefined ? parseFloat(item.poissonProb) / 100 : goal;
-      const elo = item.eloProb !== undefined ? parseFloat(item.eloProb) / 100 : 0.5;
-      const inputs = [lay, goal, btts, poisson, elo];
-    
-      let under25HalfProb = 0;
-      if (!inputs.some(isNaN)) {
-        const inputTensor = tf.tensor2d([inputs]);
-        const prediction = under25Model.predict(inputTensor);
-        under25HalfProb = (await prediction.data())[0] * 100;
-      }
-    
-      return {
-        ...item,
-        under25HalfProb: under25Prob.toFixed(2),
-        certaintyLevel: under25Prob > 70 ? 'Haute' : under25Prob > 50 ? 'Moyenne' : 'Faible'
-      };
-    }));
-const filteredData = under25Data.filter(item => item !== null);
-
-    filteredData.sort((a, b) => b.under25HalfProb - a.under25HalfProb);
-    const top15 = filteredData.slice(0, 15);
-
-    const duration = Date.now() - startTime;
-    console.log(`Analyse under 2.5 half terminée: ${top15.length} matchs, en ${duration} ms`);
-    return top15;
-  } catch (error) {
-    console.error(`Erreur lors de l'analyse under 2.5 half: ${error.message}`);
-    return [];
-  }
-}
-
-let cachedUnder25Model = null;
-
-// Ajouter à l'export
-module.exports = { analyze, analyzeVIP, getUnder25Model };
-
-// Ajouter à the if (require.main === module)
 if (require.main === module) {
   (async () => {
     try {
@@ -469,12 +416,6 @@ if (require.main === module) {
       } else if (process.argv[2] === 'vip') {
         const vipResults = await analyzeVIP();
         console.log(JSON.stringify(vipResults, null, 2));
-      } else if (process.argv[2] === 'train-under25') {
-        await getUnder25Model();
-        console.log('Modèle under 2.5 half entraîné (en mémoire).');
-      } else if (process.argv[2] === 'under25') {
-        const under25Results = await analyzeUnder25Half(process.argv[3]);
-        console.log(JSON.stringify(under25Results, null, 2));
       } else {
         const results = await analyze(process.argv[2]);
         console.log(JSON.stringify(results, null, 2));
@@ -541,7 +482,6 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
     
     // Train the model once outside the loop
     const vipModel = await createFixedVIPModel();
-    const under25Model = await getUnder25Model(); // Charger le modèle under 2.5 pour intégration
     
     const reliabilityData = await Promise.all(results.map(async (item) => {
       const layProb = 100 - item.correctScoreProb;
@@ -557,12 +497,9 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       // Intégration transparente de l'IA pour raffiner reliabilityScore
       const vipInputs = [layProb / 100, item.goalProb, item.firstHalfGoalProb / 100, item.bttsProb / 100, poissonProb / 100, eloProb / 100];
       
-      let aiRefinedScore = 0;
-      if (vipInputs.length > 0 && !vipInputs.some(isNaN)) {
-        const inputTensor = tf.tensor2d([vipInputs]);
-        const aiPrediction = vipModel.predict(inputTensor);
-        aiRefinedScore = (await aiPrediction.data())[0] * 100;
-      }
+      const inputTensor = tf.tensor2d([vipInputs]);
+      const aiPrediction = vipModel.predict(inputTensor);
+      const aiRefinedScore = (await aiPrediction.data())[0] * 100;
       
       // Moyenne pour harmonie
       const reliabilityScore = (
@@ -589,22 +526,7 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       const evaluationCriteria = `Fiabilité calculée basée sur: layProb (40%), goalProb (30%), firstHalfGoalProb (20%), bttsProb (10%), AI refinement (20%), Poisson (20%), Elo (10%). Marge d'erreur estimée: ±${errorMargin}%`;
       
       // Générer une prédiction basée sur l'analyse approfondie (seulement 0.5 ou 1.5 comme demandé)
-        // Intégration du modèle under 2.5 pour certitudes élevées
-const lay = isNaN(parseFloat(item.layProb)) ? 0 : parseFloat(item.layProb) / 100;
-const goal = isNaN(parseFloat(item.goalProb)) ? 0 : parseFloat(item.goalProb);
-const btts = isNaN(parseFloat(item.bttsProb)) ? 0 : parseFloat(item.bttsProb) / 100;
-const poisson = item.poissonProb !== undefined ? parseFloat(item.poissonProb) / 100 : goal;
-const elo = item.eloProb !== undefined ? parseFloat(item.eloProb) / 100 : 0.5;
-const inputs = [lay, goal, btts, poisson, elo];
-
-let under25HalfProb = 0;
-if (!inputs.some(isNaN)) {
-  const inputTensor = tf.tensor2d([inputs]);
-  const prediction = under25Model.predict(inputTensor);
-  under25HalfProb = (await prediction.data())[0] * 100;
-}
-
-let prediction = (reliabilityScore > 70) ? 1.5 : 0.5;
+        let prediction = (reliabilityScore > 70) ? 1.5 : 0.5;
 
         const { league, ...rest } = item;
         return { 
@@ -616,16 +538,12 @@ let prediction = (reliabilityScore > 70) ? 1.5 : 0.5;
           evaluationCriteria,
           poissonProb: poissonProb.toFixed(2),
           eloProb: eloProb.toFixed(2),
-          prediction, // Remplacer league par prediction
-          under25HalfProb: under25HalfProb.toFixed(2) // Ajouter la probabilité under 2.5 half
+          prediction // Remplacer league par prediction
         };
     }));
     
-    // Filtre pour ne montrer que les matchs avec under25HalfProb > 62.63%
-    const filteredData = reliabilityData.filter(item => parseFloat(item.under25HalfProb) > 62.63);
-
-    filteredData.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
-    const top15 = filteredData.slice(0, 15);
+    reliabilityData.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
+    const top15 = reliabilityData.slice(0, 15);
     
     console.log(`Analyse VIP terminée: ${top15.length} matchs analysés`);
     
@@ -731,10 +649,10 @@ async function trainVIPModel() {
   const trainData = data.slice(0, trainSize);
   const valData = data.slice(trainSize);
 
-  const trainXs = trainData.length === 0 ? tf.tensor2d([], [0,6]) : tf.tensor2d(trainData.map(d => d.inputs));
-  const trainYs = trainData.length === 0 ? tf.tensor2d([], [0,1]) : tf.tensor2d(trainData.map(d => [d.target]));
-  const valXs = valData.length === 0 ? tf.tensor2d([], [0,6]) : tf.tensor2d(valData.map(d => d.inputs));
-  const valYs = valData.length === 0 ? tf.tensor2d([], [0,1]) : tf.tensor2d(valData.map(d => [d.target]));
+  const trainXs = tf.tensor2d(trainData.map(d => d.inputs));
+  const trainYs = tf.tensor2d(trainData.map(d => [d.target]));
+  const valXs = tf.tensor2d(valData.map(d => d.inputs));
+  const valYs = tf.tensor2d(valData.map(d => [d.target]));
 
   const history = await model.fit(trainXs, trainYs, { epochs: 50, batchSize: 64, shuffle: false, validationData: [valXs, valYs], callbacks: tf.callbacks.earlyStopping({monitor: 'val_loss', patience: 10}) });
 
@@ -762,80 +680,3 @@ async function createFixedVIPModel() {
   cachedModel = await trainVIPModel();
   return cachedModel;
 }
-
-// Nouvelle fonction pour créer et entraîner le modèle spécifique pour under 2.5 buts à la mi-temps
-async function createUnder25HalfModel() {
-  const startTime = Date.now();
-  tf.setBackend('cpu');
-
-  const model = tf.sequential();
-  model.add(tf.layers.dense({
-    units: 32,
-    activation: 'relu',
-    inputShape: [5], // Inputs: lay, goal, btts, poisson, elo (excluant fhg comme feature, ou ajuster)
-    kernelInitializer: tf.initializers.glorotUniform({seed: 42})
-  }));
-  model.add(tf.layers.dense({units: 16, activation: 'relu'}));
-  model.add(tf.layers.dense({units: 8, activation: 'relu'})); // Ajout d'une couche supplémentaire pour améliorer la complexité
-  model.add(tf.layers.dense({units: 1, activation: 'sigmoid'})); // Output: prob under 2.5 half
-  model.compile({optimizer: 'adam', loss: 'meanSquaredError', metrics: ['mae']});
-
-  // Charger données de football_data_enhanced.csv (plus de données)
-  const data = [];
-  await new Promise((resolve, reject) => {
-    fs.createReadStream(path.join(__dirname, 'data', 'football_data_enhanced.csv'))
-      .pipe(csv())
-      .on('data', (row) => {
-        data.push({
-          inputs: [
-            parseFloat(row.lay),
-            parseFloat(row.goal),
-            parseFloat(row.btts),
-            parseFloat(row.poisson),
-            parseFloat(row.elo)
-          ],
-          target: 1 - parseFloat(row.fhg) // Approximation: P(under 2.5) ≈ 1 - fhg (à raffiner)
-        });
-      })
-      .on('end', resolve)
-      .on('error', reject);
-  });
-
-  if (data.length === 0) {
-    throw new Error('No data loaded for under 2.5 model');
-  }
-
-  const trainSize = Math.floor(data.length * 0.8);
-  const trainData = data.slice(0, trainSize);
-  const valData = data.slice(trainSize);
-
-  const trainXs = trainData.length === 0 ? tf.tensor2d([], [0,5]) : tf.tensor2d(trainData.map(d => d.inputs));
-  const trainYs = trainData.length === 0 ? tf.tensor2d([], [0,1]) : tf.tensor2d(trainData.map(d => [d.target]));
-  const valXs = valData.length === 0 ? tf.tensor2d([], [0,5]) : tf.tensor2d(valData.map(d => d.inputs));
-  const valYs = valData.length === 0 ? tf.tensor2d([], [0,1]) : tf.tensor2d(valData.map(d => [d.target]));
-
-  const history = await model.fit(trainXs, trainYs, { 
-    epochs: 100, // Augmenté pour un meilleur entraînement
-    batchSize: 32, // Réduit pour un apprentissage plus fin
-    shuffle: false, 
-    validationData: [valXs, valYs], 
-    callbacks: tf.callbacks.earlyStopping({monitor: 'val_loss', patience: 10}) 
-  });
-
-  const valMae = history.history.val_mae[history.history.val_mae.length - 1];
-  console.log(`Entraînement under 2.5 terminé. Validation MAE: ${valMae}`);
-  const duration = Date.now() - startTime;
-  console.log(`Temps d'entraînement under 2.5: ${duration} ms`);
-
-  return model;
-}
-
-async function getUnder25Model() {
-  if (cachedUnder25Model) return cachedUnder25Model;
-  console.log('Entraînement du modèle under 2.5 en cours...');
-  cachedUnder25Model = await createUnder25HalfModel();
-  return cachedUnder25Model;
-}
-
-// Exporter la nouvelle fonction
-module.exports = { analyze, analyzeVIP, getUnder25Model };

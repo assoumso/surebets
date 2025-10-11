@@ -402,5 +402,3 @@ function makeTableSortable(tableId = '#results-table') {
   });
 }
 // Supprimer la fonction loadPastVIPResults car elle est maintenant dans results.js
-
-// Ajout de la logique pour le bouton -2,5 1MT

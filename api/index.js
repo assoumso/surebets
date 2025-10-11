@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { analyze, analyzeVIP } = require('../index');
+const { analyze, analyzeVIP, analyzeUnder25Half } = require('../index');
 const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
 const cors = require('cors');
@@ -218,3 +218,23 @@ if (require.main === module) {
 }
 
 module.exports = app;
+// Mise à jour de l'endpoint /analyze-under-25-1mt pour utiliser le modèle AI
+app.post('/analyze-under-25-1mt', async (req, res) => {
+  const { date } = req.body;
+
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ error: 'Date invalide. Format attendu: YYYY-MM-DD' });
+  }
+
+  try {
+    const results = await analyzeUnder25Half(date);
+
+    res.json(results);
+  } catch (error) {
+    console.error(`Erreur pendant l'analyse -2,5 1MT: ${error.message}`);
+    res.status(500).json({ 
+      error: 'Erreur pendant l\'analyse', 
+      message: error.message 
+    });
+  }
+});

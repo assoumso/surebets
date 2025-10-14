@@ -1,0 +1,85 @@
+{
+  "timestamp": "2025-10-07T22:08:24.597Z",
+  "summary": {
+    "totalTests": 6,
+    "passedTests": 6,
+    "successRate": 100,
+    "duration": 377
+  },
+  "tests": [
+    {
+      "name": "Système de Sauvegarde",
+      "status": "PASSED",
+      "duration": 115,
+      "details": [
+        "✅ Fichier backup_system.js existe",
+        "✅ Commande de listage fonctionne",
+        "✅ Répertoire backups existe (1 backups)",
+        "✅ Système de backup fonctionnel"
+      ],
+      "score": 100
+    },
+    {
+      "name": "Amélioration des Données",
+      "status": "PASSED",
+      "duration": 58,
+      "details": [
+        "✅ Fichier data_enhancer.js existe",
+        "✅ Analyse des données fonctionne",
+        "✅ Dataset amélioré (1011 lignes)",
+        "✅ Amélioration des données réussie"
+      ],
+      "score": 100
+    },
+    {
+      "name": "Système de Validation",
+      "status": "PASSED",
+      "duration": 60,
+      "details": [
+        "✅ Fichier validation_system.js existe",
+        "✅ Système de validation fonctionne",
+        "✅ Validation intégrée dans index.js",
+        "✅ Système de validation opérationnel"
+      ],
+      "score": 100
+    },
+    {
+      "name": "Système de Backtesting",
+      "status": "PASSED",
+      "duration": 134,
+      "details": [
+        "✅ Fichier backtesting_system.js existe",
+        "✅ Backtest simple fonctionne",
+        "✅ Génération de rapport fonctionne",
+        "✅ Analyse Walk-Forward fonctionne",
+        "✅ Résultats de backtest sauvegardés"
+      ],
+      "score": 100
+    },
+    {
+      "name": "Intégration Complète",
+      "status": "PASSED",
+      "duration": 2,
+      "details": [
+        "✅ 5/5 fichiers requis présents",
+        "✅ 2 intégrations détectées dans index.js",
+        "✅ Dataset suffisamment large",
+        "✅ Intégration complète réussie"
+      ],
+      "score": 95
+    },
+    {
+      "name": "Performance du Serveur",
+      "status": "PASSED",
+      "duration": 1,
+      "details": [
+        "🔄 Test de démarrage du serveur...",
+        "✅ package.json existe",
+        "✅ TensorFlow détecté",
+        "✅ Application substantielle",
+        "✅ Répertoire public existe"
+      ],
+      "score": 80
+    }
+  ]
+}

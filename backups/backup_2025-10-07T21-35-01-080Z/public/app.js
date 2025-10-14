@@ -52,8 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
                 // Filtrer les matchs qui n'ont pas encore été joués
                 let filteredMatches = resultsData;
-                // Appliquer le filtre de probabilité
-                filteredMatches = filteredMatches.filter(item => item.correctScoreProb < 50);
+                // Appliquer le filtre de probabilité\n                // filteredMatches = filteredMatches.filter(item => item.correctScoreProb < 50);
                 // Trier par probabilité Lay décroissante (du plus élevé au plus faible)
                 filteredMatches.sort((a, b) => {
                     const layProbA = 100 - a.correctScoreProb;
@@ -98,28 +97,19 @@ function displayResults(data) {
             const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
             const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
             
-            // Calculer layProb en toute sécurité
-            const correctScoreProb = item.correctScoreProb ?? 0;
-            const layProb = 100 - correctScoreProb;
-            
-            // Valeurs sécurisées
-            const goalProbValue = item.goalProb ? (item.goalProb * 100).toFixed(2) : 'N/A';
-            const over15ProbValue = item.over15Prob ? item.over15Prob.toFixed(2) : 'N/A';
-            const firstHalfGoalProbValue = item.firstHalfGoalProb ? item.firstHalfGoalProb.toFixed(2) : 'N/A';
-            const bttsProbValue = item.bttsProb ? item.bttsProb.toFixed(2) : 'N/A';
+            // Calculer layProb
+            const layProb = 100 - item.correctScoreProb;
             
             row.innerHTML = `
                 <td>${matchName}</td>
                 <td>${item.time || 'N/A'}</td>
-                <td>${item.correctScore || 'N/A'}</td>
-                <td>${correctScoreProb.toFixed(2)}%</td>
+                <td>${item.correctScore}</td>
+                <td>${item.correctScoreProb.toFixed(2)}%</td>
                 <td>${layProb.toFixed(2)}%</td>
-                <td>${bttsProbValue}%</td>
-                <td class="${getProbColor(item.goalProb * 100 || 0)}">${goalProbValue}%</td>
-                <td>${firstHalfGoalProbValue}%</td>
-                <td class="${getProbColor(item.over15Prob || 0)}">${over15ProbValue}%</td>
-                <td>${item.over15Odds || 'N/A'}</td>
-                <td>${item.date || 'N/A'}</td>
+                <td>${item.bttsProb.toFixed(2)}%</td>
+                <td class="${getProbColor(item.goalProb * 100)}">${(item.goalProb * 100).toFixed(2)}%</td>
+                <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
+                <td>${item.date}</td>
             `;
             tableBody.appendChild(row);
         });
@@ -134,60 +124,10 @@ function displayResults(data) {
     vipBtn.textContent = 'Voir Résultats VIP';
     resultsSection.appendChild(vipBtn);
     
-    vipBtn.addEventListener('click', async function() {
-        const selectedDate = dateSelector.value;
-        
-        try {
-            const response = await fetch('/analyze-vip?date=' + selectedDate);
-            if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des résultats VIP');
-            }
-            const data = await response.json();
-            
-            // Trier les données par probabilité (weightedScore) et limiter à 15 prédictions
-            const sortedData = data.sort((a, b) => b.weightedScore - a.weightedScore).slice(0, 15);
-            
-            // Afficher dans le tableau VIP
-            const vipTableBody = document.querySelector('#vip-table tbody');
-            vipTableBody.innerHTML = '';
-            sortedData.forEach(item => {
-                const row = document.createElement('tr');
-                const urlParts = item.match.match(/analysis-(.+?)-betting-tip/);
-                const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
-                const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                
-                const correctScoreProb = item.correctScoreProb ?? 0;
-                const layProb = 100 - correctScoreProb;
-                
-                const goalProbValue = item.goalProb ? (item.goalProb * 100).toFixed(2) : 'N/A';
-                const over15ProbValue = item.over15Prob ? item.over15Prob.toFixed(2) : 'N/A';
-                const firstHalfGoalProbValue = item.firstHalfGoalProb ? item.firstHalfGoalProb.toFixed(2) : 'N/A';
-                const bttsProbValue = item.bttsProb ? item.bttsProb.toFixed(2) : 'N/A';
-                const weightedScoreValue = item.weightedScore ? (item.weightedScore * 100).toFixed(2) : 'N/A';
-                
-                row.innerHTML = `
-                    <td>${matchName}</td>
-                    <td>${item.time || 'N/A'}</td>
-                    <td>${item.correctScore || 'N/A'}</td>
-                    <td>${correctScoreProb.toFixed(2)}%</td>
-                    <td>${layProb.toFixed(2)}%</td>
-                    <td>${bttsProbValue}%</td>
-                    <td class="${getColorClass(item.goalProb * 100 || 0)}">${goalProbValue}%</td>
-                    <td>${firstHalfGoalProbValue}%</td>
-                    <td class="${getColorClass(item.over15Prob || 0)}">${over15ProbValue}%</td>
-                    <td>${item.over15Odds || 'N/A'}</td>
-                    <td>${weightedScoreValue}%</td>
-                    <td>${item.date || 'N/A'}</td>
-                `;
-                vipTableBody.appendChild(row);
-            });
-    
-            document.getElementById('vip-results').style.display = 'block';
-        } catch (error) {
-            console.error('Erreur VIP:', error);
-            alert('Erreur lors du chargement des résultats VIP: ' + error.message);
-        }
-    });
+    vipBtn.addEventListener('click', function() {
+    const selectedDate = dateSelector.value;
+    loadVIPResults(selectedDate);
+});
 }
     
     function makeTableSortable() {
@@ -270,14 +210,6 @@ function displayResults(data) {
         document.body.removeChild(link);
     }
     
-    // Nouvelle fonction pour déterminer la classe de couleur basée sur le pourcentage
-    function getColorClass(prob) {
-    const value = parseFloat(prob);
-    if (value < 40) return 'low-prob';
-    else if (value < 70) return 'medium-prob';
-    else return 'high-prob';
-    }
-    
     // Gestion des liens de navigation
     document.querySelector('nav a[href="#home"]').addEventListener('click', (e) => {
   e.preventDefault();
@@ -303,10 +235,22 @@ document.querySelector('nav a[href="#vip-results"]').addEventListener('click', (
         if (visitCountElement) {
           visitCountElement.innerText = data.count;
         }
+        const futuristicCountElement = document.getElementById('futuristic-count');
+        if (futuristicCountElement) {
+          futuristicCountElement.innerText = data.count;
+        }
       })
       .catch(error => console.error('Error fetching visit count:', error));
 });
 
+
+// Nouvelle fonction pour déterminer la classe de couleur basée sur le pourcentage
+function getColorClass(prob) {
+  const value = parseFloat(prob);
+  if (value < 40) return 'low-prob';
+  else if (value < 70) return 'medium-prob';
+  else return 'high-prob';
+}
 
 let vipData = [];
 
@@ -314,54 +258,50 @@ function loadVIPResults(date) {
   fetch('/analyze-vip?date=' + date)
     .then(response => response.json())
     .then(data => {
-      vipData = data;
-      displayVIPResults(data);
+      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 15);
+      displayVIPResults(vipData);
     })
     .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));
 }
 
 function displayVIPResults(results) {
   const vipResults = document.getElementById('vip-results');
-  vipResults.style.display = 'block'; // Ajouter pour montrer la section
-  vipResults.innerHTML = '';
+  vipResults.style.display = 'block';
+  const vipTableBody = document.querySelector('#vip-table tbody');
+  vipTableBody.innerHTML = '';
+  if (results.length === 0) {
+    vipTableBody.innerHTML = '<tr><td colspan="11">Aucun résultat VIP disponible pour cette date.</td></tr>';
+    return;
+  }
   results.forEach(match => {
-    let rowClass = '';
-    let icon = '';
-    if (match.certaintyLevel === 'Très sûre') {
-      rowClass = 'very-safe';
-    } else if (match.certaintyLevel === 'Sûre') {
-      rowClass = 'safe';
-    } else if (match.certaintyLevel === 'Moyenne') {
-      rowClass = 'medium';
-    } else if (match.certaintyLevel === 'Risquée') {
-      rowClass = 'risky';
-    } else if (match.certaintyLevel === 'Très risquée') {
-      rowClass = 'very-risky';
-    }
+    const urlParts = match.match.match(/analysis-(.+?)-betting-tip/);
+    const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
+    const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    
+    // Calculer les classes de couleur pour les probabilités
+    const goalProbValue = match.goalProb * 100;
+    const goalProbClass = getColorClass(goalProbValue);
+    
+    const reliabilityValue = parseFloat(match.reliabilityScore) || 0;
+    const reliabilityClass = getColorClass(reliabilityValue);
+    
     const row = document.createElement('tr');
-    row.className = rowClass;
-    
-    const correctScoreProb = match.correctScoreProb ?? 0;
-    const bttsProb = match.bttsProb ?? 0;
-    const goalProb = match.goalProb ?? 0;
-    const firstHalfGoalProb = match.firstHalfGoalProb ?? 0;
-    const weightedScore = match.weightedScore ?? 0;
-    
     row.innerHTML = `
-      <td>${match.match || 'N/A'}</td>
-      <td>${match.time || 'N/A'}</td>
-      <td>${match.correctScore || 'N/A'}</td>
-      <td>${correctScoreProb.toFixed(2)}%</td>
-      <td>${bttsProb.toFixed(2)}%</td>
-      <td>${goalProb.toFixed(2)}%</td>
-      <td>${firstHalfGoalProb.toFixed(2)}%</td>
-      <td>${weightedScore.toFixed(2)}%</td>
-      <td>${match.date || 'N/A'}</td>
+      <td>${matchName}</td>
+      <td>${String(match.prediction || '0,5').replace('.', ',')}</td>
+      <td>${match.time}</td>
+      <td>${match.correctScore}</td>
+      <td>${match.correctScoreProb.toFixed(2)}%</td>
+      <td>${match.layProb}%</td>
+      <td>${match.bttsProb.toFixed(2)}%</td>
+      <td class="${goalProbClass}">${goalProbValue.toFixed(2)}%</td>
+      <td>${match.firstHalfGoalProb.toFixed(2)}%</td>
+      <td class="${reliabilityClass}">${reliabilityValue.toFixed(2)}%</td>
+      <td>${match.date}</td>
     `;
-    vipResults.appendChild(row);
+    vipTableBody.appendChild(row);
   });
 }
-
 function loadPastVIPResults() {
   const pastSection = document.getElementById('past-vip-results');
   pastSection.style.display = 'block';
@@ -383,27 +323,21 @@ function loadPastVIPResults() {
         const matchSlug = urlParts ? urlParts[1] : 'Inconnu';
         const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
         
-        const correctScoreProb = item.correctScoreProb ?? 0;
-        const layProb = 100 - correctScoreProb;
-        
-        const bttsProbValue = item.bttsProb ? item.bttsProb.toFixed(2) : 'N/A';
-        const goalProbValue = item.goalProb ? item.goalProb.toFixed(2) : 'N/A';
-        const firstHalfGoalProbValue = item.firstHalfGoalProb ? item.firstHalfGoalProb.toFixed(2) : 'N/A';
-        const weightedScoreValue = item.weightedScore ? item.weightedScore.toFixed(2) : 'N/A';
+        const layProb = 100 - item.correctScoreProb;
         
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${matchName}</td>
-          <td>${item.date || 'N/A'}</td>
+          <td>${item.date}</td>
           <td>${item.time || 'N/A'}</td>
           <td>${item.actualScore || 'N/A'}</td>
-          <td>${item.correctScore || 'N/A'}</td>
-          <td>${correctScoreProb.toFixed(2)}%</td>
+          <td>${item.correctScore}</td>
+          <td>${item.correctScoreProb.toFixed(2)}%</td>
           <td>${layProb.toFixed(2)}%</td>
-          <td>${bttsProbValue}%</td>
-          <td>${goalProbValue}%</td>
-          <td>${firstHalfGoalProbValue}%</td>
-          <td>${weightedScoreValue}%</td>
+          <td>${item.bttsProb.toFixed(2)}%</td>
+          <td>${item.goalProb.toFixed(2)}%</td>
+          <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
+          <td>${item.weightedScore.toFixed(2)}%</td>
         `;
         tableBody.appendChild(row);
       });

@@ -3,9 +3,28 @@ const path = require('path');
 const { analyze, analyzeVIP } = require('../index');
 const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
+const PerformanceMonitor = require('../performance-monitor');
 
 
 const app = express();
+const performanceMonitor = new PerformanceMonitor();
+
+// Middleware pour surveiller les performances
+app.use((req, res, next) => {
+  req.startTime = Date.now();
+  performanceMonitor.incrementRequestCount();
+  
+  // Intercepter la fin de la réponse pour mesurer le temps
+  const originalSend = res.send;
+  res.send = function(data) {
+    const endTime = Date.now();
+    performanceMonitor.recordResponseTime(req.startTime, endTime);
+    originalSend.call(this, data);
+  };
+  
+  next();
+});
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -34,16 +53,46 @@ app.get('/visit-count', (req, res) => {
   // Sauvegarde désactivée pour compatibilité Vercel
   res.json({ count: visitCount });
 });
+// Dans l'endpoint /analyze
+// Route pour obtenir les métriques de performance
+app.get('/api/performance', (req, res) => {
+  try {
+    const report = performanceMonitor.generatePerformanceReport();
+    res.json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    performanceMonitor.recordError(error);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de la génération du rapport de performance'
+    });
+  }
+});
+
+// Route pour l'analyse avec surveillance des performances
 app.get('/analyze', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
+  // Validation de la date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ error: 'Date invalide. Format attendu: YYYY-MM-DD' });
+  }
   console.log(`Requête d'analyse reçue pour la date: ${date}`);
   
   try {
+    console.log(`Analyse demandée pour la date: ${date} avec IA avancée`);
     const startTime = Date.now();
-    const results = await analyze(date) || []; // Ajouter une valeur par défaut si undefined
-    const duration = Date.now() - startTime;
     
-    console.log(`Analyse terminée en ${duration}ms, ${results ? results.length : 0} matchs trouvés`);
+    const results = await analyze(date) || []; // Ajouter une valeur par défaut si undefined
+    
+    const endTime = Date.now();
+    const processingTime = endTime - startTime;
+    
+    // Enregistrer les métriques de performance
+    performanceMonitor.recordAIMetrics(processingTime);
+    
+    console.log(`Analyse terminée en ${processingTime}ms, ${results ? results.length : 0} matchs trouvés`);
     
     if (!Array.isArray(results)) {
       console.error(`Format de résultat invalide: ${typeof results}`);
@@ -69,12 +118,39 @@ app.get('/analyze', async (req, res) => {
         layProb: ensureValidNumber(match.layProb),
         bttsProb: ensureValidNumber(match.bttsProb),
         goalProb: ensureValidNumber(match.goalProb, false),
-        firstHalfGoalProb: ensureValidNumber(match.firstHalfGoalProb)
+        firstHalfGoalProb: ensureValidNumber(match.firstHalfGoalProb),
+        over15Prob: ensureValidNumber(match.over15Prob),
+        highOver15: match.highOver15 || false,
+        over15Odds: match.over15Prob > 0 ? (100 / match.over15Prob).toFixed(2) : 'N/A',
+        // Nouvelles métriques IA
+        aiConfidence: match.aiConfidence || 60,
+        aiRecommendation: match.aiRecommendation || "Analyse standard",
+        enhancedCorrectScoreProb: match.enhancedCorrectScoreProb || match.correctScoreProb,
+        enhancedBttsProb: match.enhancedBttsProb || match.bttsProb,
+        enhancedGoalProb: match.enhancedGoalProb || match.goalProb,
+        aiOptimizedScore: match.aiOptimizedScore || match.correctScore,
+        riskAssessment: match.riskAssessment || "Moyen",
+        valueRating: match.valueRating || 3,
+        trendAnalysis: match.trendAnalysis || {}
       };
     });
     
-    res.json(formattedResults);
+    // Trier les résultats par probabilité over15Prob décroissante
+    formattedResults.sort((a, b) => b.over15Prob - a.over15Prob);
+    
+    res.json({
+      success: true,
+      data: formattedResults,
+      metadata: {
+        date: date,
+        count: formattedResults.length,
+        processingTime: processingTime,
+        aiEnhanced: true,
+        performanceStatus: performanceMonitor.getAverageMetrics()
+      }
+    });
   } catch (error) {
+    performanceMonitor.recordError(error);
     console.error(`Erreur pendant l'analyse: ${error.message}`);
     console.error(error.stack);
     res.status(500).json({ 
@@ -148,8 +224,13 @@ app.post('/analyze', async (req, res) => {
     res.status(500).json({ error: "Erreur pendant l'analyse" });
   }
 });
+// Dans l'endpoint /analyze-vip
 app.get('/analyze-vip', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
+  // Validation de la date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ error: 'Date invalide. Format attendu: YYYY-MM-DD' });
+  }
   console.log(`Requête d'analyse VIP reçue pour la date: ${date}`);
   
   try {
@@ -177,6 +258,11 @@ app.get('/analyze-vip', async (req, res) => {
       date: date
     });
   }
+});
+
+app.get('/past-vip-results', (req, res) => {
+  // TODO: Implémenter la logique réelle pour récupérer les résultats VIP passés
+  res.json([]);
 });
 
 if (require.main === module) {

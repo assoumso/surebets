@@ -1,0 +1,240 @@
+[
+  {
+    "period": {
+      "startDate": "2024-09-01",
+      "endDate": "2024-09-30"
+    },
+    "summary": {
+      "totalPredictions": 0,
+      "correctPredictions": 0,
+      "accuracy": "NaN%",
+      "roi": "NaN%",
+      "netProfit": "0.00€",
+      "totalStake": "0€"
+    },
+    "dailyResults": [],
+    "timestamp": "2025-10-07T21:43:21.793Z"
+  },
+  {
+    "period": {
+      "startDate": "2024-09-01",
+      "endDate": "2024-09-30"
+    },
+    "summary": {
+      "totalPredictions": 0,
+      "correctPredictions": 0,
+      "accuracy": "NaN%",
+      "roi": "NaN%",
+      "netProfit": "0.00€",
+      "totalStake": "0€"
+    },
+    "dailyResults": [],
+    "timestamp": "2025-10-07T21:43:48.964Z"
+  },
+  {
+    "period": {
+      "startDate": "2024-12-01",
+      "endDate": "2024-12-15"
+    },
+    "summary": {
+      "totalPredictions": 0,
+      "correctPredictions": 0,
+      "accuracy": "NaN%",
+      "roi": "NaN%",
+      "netProfit": "0.00€",
+      "totalStake": "0€"
+    },
+    "dailyResults": [],
+    "timestamp": "2025-10-07T21:47:41.656Z"
+  },
+  {
+    "period": {
+      "startDate": "2024-12-01",
+      "endDate": "2024-12-15"
+    },
+    "summary": {
+      "totalPredictions": 0,
+      "correctPredictions": 0,
+      "accuracy": "0.00%",
+      "roi": "0.00%",
+      "netProfit": "0.00€",
+      "totalStake": "0€"
+    },
+    "dailyResults": [],
+    "timestamp": "2025-10-07T21:49:09.865Z"
+  },
+  {
+    "period": {
+      "startDate": "2024-12-01",
+      "endDate": "2024-12-15"
+    },
+    "summary": {
+      "totalPredictions": 125,
+      "correctPredictions": 85,
+      "accuracy": "68.00%",
+      "roi": "81.60%",
+      "netProfit": "620.00€",
+      "totalStake": "1250€"
+    },
+    "dailyResults": [
+      {
+        "date": "2024-12-01",
+        "matches": 7,
+        "correct": 6,
+        "accuracy": "85.71",
+        "profit": "62.00"
+      },
+      {
+        "date": "2024-12-02",
+        "matches": 6,
+        "correct": 3,
+        "accuracy": "50.00",
+        "profit": "6.00"
+      },
+      {
+        "date": "2024-12-03",
+        "matches": 12,
+        "correct": 8,
+        "accuracy": "66.67",
+        "profit": "56.00"
+      },
+      {
+        "date": "2024-12-04",
+        "matches": 5,
+        "correct": 5,
+        "accuracy": "100.00",
+        "profit": "60.00"
+      },
+      {
+        "date": "2024-12-05",
+        "matches": 10,
+        "correct": 7,
+        "accuracy": "70.00",
+        "profit": "54.00"
+      },
+      {
+        "date": "2024-12-06",
+        "matches": 7,
+        "correct": 5,
+        "accuracy": "71.43",
+        "profit": "40.00"
+      },
+      {
+        "date": "2024-12-07",
+        "matches": 12,
+        "correct": 8,
+        "accuracy": "66.67",
+        "profit": "56.00"
+      },
+      {
+        "date": "2024-12-08",
+        "matches": 11,
+        "correct": 11,
+        "accuracy": "100.00",
+        "profit": "132.00"
+      },
+      {
+        "date": "2024-12-09",
+        "matches": 7,
+        "correct": 3,
+        "accuracy": "42.86",
+        "profit": "-4.00"
+      },
+      {
+        "date": "2024-12-10",
+        "matches": 10,
+        "correct": 4,
+        "accuracy": "40.00",
+        "profit": "-12.00"
+      },
+      {
+        "date": "2024-12-11",
+        "matches": 5,
+        "correct": 4,
+        "accuracy": "80.00",
+        "profit": "38.00"
+      },
+      {
+        "date": "2024-12-12",
+        "matches": 10,
+        "correct": 6,
+        "accuracy": "60.00",
+        "profit": "32.00"
+      },
+      {
+        "date": "2024-12-13",
+        "matches": 5,
+        "correct": 2,
+        "accuracy": "40.00",
+        "profit": "-6.00"
+      },
+      {
+        "date": "2024-12-14",
+        "matches": 11,
+        "correct": 8,
+        "accuracy": "72.73",
+        "profit": "66.00"
+      },
+      {
+        "date": "2024-12-15",
+        "matches": 7,
+        "correct": 5,
+        "accuracy": "71.43",
+        "profit": "40.00"
+      }
+    ],
+    "timestamp": "2025-10-07T21:50:56.485Z"
+  },
+  {
+    "period": {
+      "startDate": "2024-12-01",
+      "endDate": "2024-12-05"
+    },
+    "summary": {
+      "totalPredictions": 47,
+      "correctPredictions": 35,
+      "accuracy": "74.47%",
+      "roi": "89.36%",
+      "netProfit": "300.00€",
+      "totalStake": "470€"
+    },
+    "dailyResults": [
+      {
+        "date": "2024-12-01",
+        "matches": 6,
+        "correct": 3,
+        "accuracy": "50.00",
+        "profit": "6.00"
+      },
+      {
+        "date": "2024-12-02",
+        "matches": 12,
+        "correct": 8,
+        "accuracy": "66.67",
+        "profit": "56.00"
+      },
+      {
+        "date": "2024-12-03",
+        "matches": 7,
+        "correct": 6,
+        "accuracy": "85.71",
+        "profit": "62.00"
+      },
+      {
+        "date": "2024-12-04",
+        "matches": 8,
+        "correct": 6,
+        "accuracy": "75.00",
+        "profit": "52.00"
+      },
+      {
+        "date": "2024-12-05",
+        "matches": 14,
+        "correct": 12,
+        "accuracy": "85.71",
+        "profit": "124.00"
+      }
+    ],
+    "timestamp": "2025-10-07T22:08:24.496Z"
+  }
+]

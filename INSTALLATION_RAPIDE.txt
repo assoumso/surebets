@@ -1,0 +1,42 @@
+🚀 INSTALLATION RAPIDE BARAKASYT - VERCEL
+
+=== MÉTHODE 1 : SCRIPT AUTOMATIQUE ===
+1. Double-cliquez sur deploy.ps1
+2. Suivez les instructions
+
+=== MÉTHODE 2 : COMMANDES MANUELLES ===
+
+📋 ÉTAPE 1 : Ouvrir PowerShell/Terminal
+cd C:\xampp\htdocs\BarakaSYT
+
+📋 ÉTAPE 2 : Installer et déployer
+npm install -g vercel
+vercel login
+vercel --prod
+
+📋 ÉTAPE 3 : Suivre les questions
+- Set up and deploy? → Y
+- Project name → barakasyt
+- Override settings? → N
+
+=== MÉTHODE 3 : GITHUB + VERCEL ===
+
+1. Créer compte GitHub
+2. Créer repository "barakasyt"
+3. Exécuter:
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/VOTRE_USERNAME/barakasyt.git
+git push -u origin main
+
+4. Aller sur vercel.com → Import Project → From GitHub
+5. Sélectionner barakasyt → Deploy
+
+=== URL FINALE ===
+https://barakasyt-[votre-nom].vercel.app
+
+=== SUPPORT ===
+- Lire DEPLOYMENT_GUIDE.md pour plus de détails
+- Vérifier vercel.json pour la configuration
+- Consulter README.md pour la documentation

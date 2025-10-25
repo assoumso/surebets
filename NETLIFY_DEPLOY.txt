@@ -1,0 +1,46 @@
+🚀 DÉPLOIEMENT NETLIFY - GUIDE RAPIDE
+
+## 📋 ÉTAPES DE DÉPLOIEMENT :
+
+### 1. **Installation Netlify CLI** (si nécessaire)
+```bash
+npm install -g netlify-cli
+```
+
+### 2. **Connexion à Netlify**
+```bash
+netlify login
+```
+
+### 3. **Déploiement en production**
+```bash
+netlify deploy --prod
+```
+
+### 4. **Configuration alternative** (via interface web)
+- Allez sur https://app.netlify.com
+- Cliquez sur "New site from Git"
+- Connectez votre repository GitHub
+- Sélectionnez le repository BarakaSYT
+- Build command : `npm run build`
+- Publish directory : `.`
+
+## 🎯 **URL finale** :
+- **Domaine Netlify** : https://barakasyt.netlify.app
+- **Domaine personnalisé** : Optionnel après déploiement
+
+## ⚙️ **Fichiers de configuration** :
+- ✅ `netlify.toml` créé
+- ✅ `package.json` mis à jour
+- ✅ Scripts de build configurés
+
+## 💡 **Commandes utiles** :
+```bash
+# Déploiement rapide
+npx netlify deploy --prod
+
+# Déploiement avec aperçu
+npx netlify deploy --prod --open
+```
+
+Le déploiement est en cours dans le terminal ! Répondez aux questions de configuration si nécessaire.

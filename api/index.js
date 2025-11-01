@@ -3,9 +3,11 @@ const path = require('path');
 const { analyze, analyzeVIP } = require('../index');
 const stripe = require('stripe')('your_stripe_secret_key'); // Remplacez par votre clé secrète Stripe
 const fs = require('fs');
+const cors = require('cors');
 
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -25,17 +27,28 @@ try {
   console.error('Error loading visit count:', error);
 }
 
+// Modified to increment and save on page load
 app.get('/', (req, res) => {
+  visitCount++;
+  try {
+    fs.writeFileSync(countFile, JSON.stringify({ count: visitCount }), 'utf8');
+  } catch (error) {
+    console.error('Error saving visit count:', error);
+  }
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
+// Modified to just return count without incrementing
 app.get('/visit-count', (req, res) => {
-  visitCount++;
-  // Sauvegarde désactivée pour compatibilité Vercel
   res.json({ count: visitCount });
 });
+// Dans l'endpoint /analyze
 app.get('/analyze', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
+  // Validation de la date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ error: 'Date invalide. Format attendu: YYYY-MM-DD' });
+  }
   console.log(`Requête d'analyse reçue pour la date: ${date}`);
   
   try {
@@ -148,8 +161,13 @@ app.post('/analyze', async (req, res) => {
     res.status(500).json({ error: "Erreur pendant l'analyse" });
   }
 });
+// Dans l'endpoint /analyze-vip
 app.get('/analyze-vip', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
+  // Validation de la date
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(new Date(date).getTime())) {
+    return res.status(400).json({ error: 'Date invalide. Format attendu: YYYY-MM-DD' });
+  }
   console.log(`Requête d'analyse VIP reçue pour la date: ${date}`);
   
   try {
@@ -171,11 +189,24 @@ app.get('/analyze-vip', async (req, res) => {
     res.json(results);
   } catch (error) {
     console.error(`Erreur pendant l'analyse VIP: ${error.message}`);
+    console.error(error.stack);
+    // Assurer que l'erreur est toujours au format JSON valide
     res.status(500).json({
       error: 'Erreur pendant l\'analyse VIP',
-      message: error.message,
+      message: error.message || 'Erreur inconnue',
+      stack: process.env.NODE_ENV === 'production' ? null : error.stack,
       date: date
     });
+  }
+});
+
+app.get('/past-vip-results', (req, res) => {
+  try {
+    const results = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'results.json'), 'utf8'));
+    res.json(results);
+  } catch (error) {
+    console.error('Erreur lors du chargement de results.json:', error);
+    res.status(500).json({ error: 'Erreur lors du chargement des résultats passés' });
   }
 });
 

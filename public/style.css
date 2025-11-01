@@ -121,8 +121,19 @@ main {
     margin-bottom: 30px;
     transition: all 0.3s ease;
 }
+#results, #vip-results, #past-vip-results {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    transition: all 0.3s ease;
+}
 
 #results:hover, #vip-results:hover {
+    box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+}
+#results:hover, #vip-results:hover, #past-vip-results:hover {
     box-shadow: 0 5px 25px rgba(0,0,0,0.15);
 }
 
@@ -132,6 +143,84 @@ main {
     margin-bottom: 25px;
     border-radius: 5px;
     overflow: hidden;
+}
+#results-table, #vip-table, #past-vip-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 25px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+/* Styles pour la page de résultats dédiée */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+header {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 1em;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1em;
+}
+
+#past-vip-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+}
+
+#past-vip-table th, #past-vip-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+#past-vip-table th {
+  background-color: #f2f2f2;
+  cursor: pointer;
+}
+
+#past-vip-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Classes pour le dégradé de couleurs des probabilités */
+.high-prob {
+  background-color: #4CAF50; /* Vert */
+  color: white;
+  font-weight: bold;
+}
+
+.medium-prob {
+  background-color: #FFC107; /* Jaune */
+  color: black;
+  font-weight: bold;
+}
+
+.low-prob {
+  background-color: #FFEB3B; /* Jaune clair */
+  color: black;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  #past-vip-table {
+    font-size: 0.8em;
+  }
+  
+  main {
+    padding: 0.5em;
+  }
 }
 
 #results-table th, #results-table td, #vip-table th, #vip-table td {
@@ -173,12 +262,28 @@ main {
     color: #555;
 }
 
+/* Style moderne et attractif pour le compteur de visiteurs */
 #visit-counter {
     text-align: center;
     font-weight: bold;
     color: #DAA520;
-    font-size: 1.1rem;
-    margin: 15px 0;
+    font-size: 1.2rem;
+    margin: 20px 0;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+#visit-counter:hover {
+    transform: scale(1.05);
+}
+
+#visit-count {
+    color: #4CAF50;
+    font-size: 1.5rem;
+    font-family: 'Courier New', monospace;
 }
 
 #results-table tr:nth-child(even), #vip-table tr:nth-child(even) {
@@ -193,6 +298,64 @@ main {
 #export-csv, #vip-btn {
     background: linear-gradient(to bottom, #FFD700, #DAA520);
     border: none;
+}
+
+#landing-page {
+    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px var(--shadow-color);
+    margin: 30px auto;
+    max-width: 800px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+#landing-page:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px var(--shadow-color);
+}
+
+#landing-page h2 {
+    color: var(--text-color);
+    font-size: 2.2rem;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+#landing-page p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--text-color);
+}
+
+#landing-page ol {
+    list-style-type: decimal;
+    padding-left: 40px;
+    text-align: left;
+    margin: 0 auto;
+    max-width: 600px;
+}
+
+#landing-page li {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    #landing-page {
+        padding: 20px;
+    }
+    
+    #landing-page h2 {
+        font-size: 1.8rem;
+    }
+    
+    #landing-page p, #landing-page li {
+        font-size: 1rem;
+    }
+}
     color: white;
     padding: 12px 25px;
     cursor: pointer;
@@ -557,3 +720,5 @@ button:hover {
 .prob-green { color: #2E8B57; font-weight: bold; }
 .prob-yellow { color: #DAA520; font-weight: bold; }
 .prob-red { color: #CD5C5C; font-weight: bold; }
+
+/* Styles pour la page Abonnements */\n.subscription-option {\n  border: 1px solid var(--table-border);\n  padding: 20px;\n  margin: 10px;\n  border-radius: 5px;\n  text-align: center;\n  background: var(--table-bg);\n  box-shadow: 0 2px 5px var(--shadow-color);\n}\n\n.subscribe-btn {\n  background: var(--button-bg);\n  color: var(--button-text);\n  padding: 10px 20px;\n  border: none;\n  border-radius: 5px;\n  cursor: pointer;\n  font-weight: bold;\n}\n\n.subscribe-btn:hover {\n  background: var(--primary-color);\n}\n\n#payment-form-container {\n  background: var(--table-bg);\n  padding: 20px;\n  border-radius: 5px;\n  box-shadow: 0 2px 10px var(--shadow-color);\n  margin-top: 20px;\n}\n\n#payment-form label {\n  display: block;\n  margin-bottom: 10px;\n}\n\n#payment-form input, #payment-form button {\n  margin-bottom: 10px;\n  padding: 8px;\n  width: 100%;\n}\n\n#card-element {\n  border: 1px solid var(--table-border);\n  padding: 10px;\n  margin-bottom: 10px;\n}\n\n#card-errors {\n  color: red;\n}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultats VIP Passés</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Résultats des Matchs VIP Passés</h1>
+    </header>
+    <nav aria-label="Menu principal">
+        <ul>
+            <li><a href="index.html">Accueil</a></li>
+            <li><a href="index.html#controls">Analyse</a></li>
+            <li><a href="index.html#vip-results">VIP</a></li>
+            <li><a href="results.html" aria-current="page">Résultats</a></li>
+            <li><a href="subscriptions.html">Abonnements</a></li>
+        </ul>
+    </nav>    <main>
+        <section id="past-vip-results">
+            <table id="past-vip-table">
+                <thead>
+                    <tr>
+                        <th>Match</th>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Score Réel</th>
+                        <th>Score Correct</th>
+                        <th>Prob. Score Correct</th>
+                        <th>Prob. Lay</th>
+                        <th>Prob. BTTS</th>
+                        <th>Prob. Buts</th>
+                        <th>Prob. Buts Mi-Temps</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+    <script src="results.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPastVIPResults();
+        });
+    </script>
+</body>
+</html>

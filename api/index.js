@@ -27,6 +27,11 @@ try {
   console.error('Error loading visit count:', error);
 }
 
+// Modified to just return count without incrementing
+app.get('/visit-count', (req, res) => {
+  res.json({ count: visitCount });
+});
+
 // Modified to increment and save on page load
 app.get('/', (req, res) => {
   visitCount++;
@@ -36,11 +41,6 @@ app.get('/', (req, res) => {
     console.error('Error saving visit count:', error);
   }
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
-
-// Modified to just return count without incrementing
-app.get('/visit-count', (req, res) => {
-  res.json({ count: visitCount });
 });
 // Dans l'endpoint /analyze
 app.get('/analyze', async (req, res) => {

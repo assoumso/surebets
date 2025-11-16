@@ -1,29 +1,18 @@
 {
   "name": "barakasyt",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "api/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node api/index.js",
-    "dev": "node server.js",
-    "netlify": "netlify deploy --prod"
+    "start": "node api/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-backend-cpu": "^4.22.0",
-    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
-    "@tensorflow/tfjs-core": "^4.22.0",
-    "@tensorflow/tfjs-layers": "^4.22.0",
-    "axios": "^1.11.0",
-    "cheerio": "^1.1.2",
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
-    "csv-parser": "^3.2.0",
-    "express": "^5.1.0",
-    "seedrandom": "^3.0.5",
-    "stripe": "^18.5.0"
+    "csv-parser": "^3.0.0",
+    "express": "^4.19.2",
+    "stripe": "^17.2.0"
   }
 }

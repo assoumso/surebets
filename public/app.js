@@ -105,10 +105,11 @@ function displayResults(data) {
                 <td>${item.time || 'N/A'}</td>
                 <td>${item.correctScore}</td>
                 <td>${item.correctScoreProb.toFixed(2)}%</td>
-                <td>${layProb.toFixed(2)}%</td>
+                
                 <td>${item.bttsProb.toFixed(2)}%</td>
                 <td class="${getProbColor(item.goalProb * 100)}">${(item.goalProb * 100).toFixed(2)}%</td>
-                <td>${item.firstHalfGoalProb.toFixed(2)}%</td>
+                <td class="${getProbColor(item.over15Prob || 0)}">${(item.over15Prob || 0).toFixed(2)}%</td>
+                
                 <td>${item.date}</td>
             `;
             tableBody.appendChild(row);
@@ -282,21 +283,25 @@ function displayVIPResults(results) {
     const goalProbValue = match.goalProb * 100;
     const goalProbClass = getColorClass(goalProbValue);
     
+    const over15ProbValue = match.over15Prob || 0;
+    const over15ProbClass = getColorClass(over15ProbValue);
+    
     const reliabilityValue = parseFloat(match.reliabilityScore) || 0;
     const reliabilityClass = getColorClass(reliabilityValue);
     
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${matchName}</td>
-      <td>${getVerdict(match)}</td>
+      
       <td>${match.time}</td>
       <td>${match.correctScore}</td>
       <td>${match.correctScoreProb.toFixed(2)}%</td>
-      <td>${match.layProb}%</td>
+      
       <td>${match.bttsProb.toFixed(2)}%</td>
       <td class="${goalProbClass}">${goalProbValue.toFixed(2)}%</td>
-      <td>${match.firstHalfGoalProb.toFixed(2)}%</td>
-      <td class="${reliabilityClass}">${reliabilityValue.toFixed(2)}%</td>
+      <td class="${over15ProbClass}">${over15ProbValue.toFixed(2)}%</td>
+      
+      
       <td>${match.date}</td>
     `;
     vipTableBody.appendChild(row);
@@ -402,13 +407,3 @@ function makeTableSortable(tableId = '#results-table') {
   });
 }
 // Supprimer la fonction loadPastVIPResults car elle est maintenant dans results.js
-function getVerdict(match) {
-  const over15 = match.over15Prob * 100;
-  if (over15 >= 70) {
-    return 'Plus de 1.5 buts';
-  } else if (over15 >= 50) {
-    return '0.5-1.5 buts probable';
-  } else {
-    return 'Moins de 0.5 buts';
-  }
-}

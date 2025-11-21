@@ -7,7 +7,7 @@
     <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
-    <header id=\"home\">
+    <header id="home">
         <nav aria-label="Menu principal">
             <ul>
                 <li><a href="#home" aria-current="page">Accueil</a></li>
@@ -16,20 +16,16 @@
                 <li><a href="results.html" target="_blank">Résultats</a></li>
                 <li><a href="subscriptions.html">Abonnements</a></li>
             </ul>
-        </nav>        <header>
-          <h1>Baraka SYT - Prédictions de Matchs de Football</h1>
-        </header>
-
-        <section id="landing-page">
-            <h2>Bienvenue sur Baraka SYT</h2>
-            <p>Voici les étapes pour utiliser l'application :</p>
+        </nav>
+        <div id="welcome-box">
+            <h1>Bienvenue sur Baraka SYT</h1>
+            <p>Choisissez l'option pour utiliser l'application :</p>
             <ol>
-                <li>Cliquez sur le bouton "Analyser" pour afficher tous les matchs.</li>
-                <li>Allez jusqu'en bas du tableau et cliquez sur "Voir Résultats VIP" pour afficher la liste des paris sûrs et fiables.</li>
+                <li>Cliquez sur "Analyse" pour voir les matchs VIP et afficher les résultats.</li>
+                <li>Pour les abonnements, cliquez sur "Abonnements" pour voir nos offres VIP.</li>
             </ol>
-            <p id=\"visit-counter\">Nombre de visites: <span id=\"visit-count\">0</span></p>
-        </section>
-        
+            <p>Nombre de visites : <span id="visit-count">0</span></p>
+        </div>
     </header>
     <main>
         <section id="controls" id=\"controls\">
@@ -50,10 +46,11 @@
                     <th>Heure</th>
                     <th>Score Correct</th>
                     <th>Probabilité Score Correct</th>
-                    <th>Probabilité Lay</th>
+                    
                     <th>Probabilité BTTS</th>
                     <th>Probabilité de But</th>
-                    <th>Prob. But 1ère MT (IA)</th>
+                    <th>Prob. Over 1.5</th>
+                    
                     <th>Date</th>
                 </tr>
                 </thead>
@@ -66,15 +63,16 @@
                 <thead>
                     <tr>
                         <th>Match</th>
-                        <th>Verdict</th>
+                        
                         <th>Heure</th>
                         <th>Score Correct</th>
                         <th>Probabilité Score Correct</th>
-                        <th>Probabilité Lay</th>
+                        
                         <th>Probabilité BTTS</th>
                         <th>Probabilité de But</th>
-                        <th>Prob. But 1ère MT (IA)</th>
-                        <th>Score de Fiabilité</th>
+                        <th>Prob. Over 1.5</th>
+                        
+                        
                         <th>Date</th>
                     </tr>
                 </thead>

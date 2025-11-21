@@ -263,17 +263,36 @@ main {
 }
 
 /* Style moderne et attractif pour le compteur de visiteurs */
-#visit-counter {
-    text-align: center;
-    font-weight: bold;
-    color: #DAA520;
-    font-size: 1.2rem;
-    margin: 20px 0;
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+#welcome-box {
+  background-color: #FFD700;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px auto;
+  max-width: 600px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+#welcome-box h1 {
+  text-align: center;
+  color: #333;
+}
+
+#welcome-box p {
+  color: #333;
+}
+
+#welcome-box ol {
+  padding-left: 20px;
+}
+
+#welcome-box li {
+  margin-bottom: 10px;
+}
+
+#welcome-box p:last-child {
+  text-align: center;
+  font-weight: bold;
 }
 
 #visit-counter:hover {
@@ -298,64 +317,6 @@ main {
 #export-csv, #vip-btn {
     background: linear-gradient(to bottom, #FFD700, #DAA520);
     border: none;
-}
-
-#landing-page {
-    background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 10px 20px var(--shadow-color);
-    margin: 30px auto;
-    max-width: 800px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-#landing-page:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px var(--shadow-color);
-}
-
-#landing-page h2 {
-    color: var(--text-color);
-    font-size: 2.2rem;
-    margin-bottom: 20px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-}
-
-#landing-page p {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-    color: var(--text-color);
-}
-
-#landing-page ol {
-    list-style-type: decimal;
-    padding-left: 40px;
-    text-align: left;
-    margin: 0 auto;
-    max-width: 600px;
-}
-
-#landing-page li {
-    font-size: 1.1rem;
-    margin-bottom: 10px;
-    line-height: 1.6;
-}
-
-@media (max-width: 768px) {
-    #landing-page {
-        padding: 20px;
-    }
-    
-    #landing-page h2 {
-        font-size: 1.8rem;
-    }
-    
-    #landing-page p, #landing-page li {
-        font-size: 1rem;
-    }
-}
     color: white;
     padding: 12px 25px;
     cursor: pointer;

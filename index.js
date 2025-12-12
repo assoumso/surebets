@@ -341,10 +341,17 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
     
         // Calcul pour Over 2.5
         let overProb = 0;
+        // Calcul spécifique pour Over 1.5 (NOUVEAU)
+        let over15Prob = 0;
+        
         for (let g1 = 0; g1 <= maxGoals; g1++) {
           for (let g2 = 0; g2 <= maxGoals; g2++) {
+            const prob = poissonProbability(g1, adjustedLambdaTeam1) * poissonProbability(g2, adjustedLambdaTeam2) * 100;
             if (g1 + g2 > 2) {
-              overProb += poissonProbability(g1, adjustedLambdaTeam1) * poissonProbability(g2, adjustedLambdaTeam2) * 100;
+              overProb += prob;
+            }
+            if (g1 + g2 > 1) {
+              over15Prob += prob;
             }
           }
         }
@@ -352,7 +359,13 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         bttsProb = Math.max(0, Math.min(100, (bttsProb + refinedBttsProb) / 2));
     
         const refinedOverProb = (team1Over + team2Over + overProb) / 3;
-    
+        
+        // Raffinement Over 1.5 avec statistiques réelles si disponibles (approximation via Over 2.5 + BTTS)
+        // Logique : Si Over 2.5 est élevé OU BTTS est élevé, Over 1.5 est très probable
+        const statOver15 = Math.min(100, (team1Over + team2Over) / 2 + 20); // Estimation conservatrice
+        over15Prob = (over15Prob + statOver15 + bttsProb) / 3;
+        over15Prob = Math.min(100, Math.max(0, over15Prob)); // Bornage [0, 100]
+
         // Mise à jour goalProb avec raffinements
         goalProb = Math.min(1, Math.max(0, (basicGoalProb + probAnyGoals + refinedGoalProb / 100 + refinedOverProb / 100) / 4)); // Normalisation à [0,1]
     
@@ -389,6 +402,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
           team2Over, 
           goalProb, 
           firstHalfGoalProb,
+          over15Prob, // Ajout du champ calculé
           league // Add league here
         });
 
@@ -411,6 +425,7 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
           team2Over: 0,
           goalProb: 0,
           firstHalfGoalProb: 0,
+          over15Prob: 0, // Valeur par défaut
           error: error.message
         };
       }
@@ -571,16 +586,17 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       
       // Moyenne pondérée AMÉLIORÉE pour reliabilityScore
       const reliabilityScore = (
-        (layProb * 0.35) +
-        (item.goalProb * 100 * 0.25) +
-        (item.firstHalfGoalProb * 0.15) +
+        (layProb * 0.3) +
+        (item.goalProb * 100 * 0.2) +
+        (item.over15Prob * 0.15) + // Intégration Over 1.5
+        (item.firstHalfGoalProb * 0.1) +
         (item.bttsProb * 0.1) +
-        (aiRefinedScore * 0.15) +
-        (poissonProb * 0.15) +
+        (aiRefinedScore * 0.1) +
+        (poissonProb * 0.1) +
         (eloProb * 0.1) +
-        (formDiff * 5) + // Bonus pour différence de forme (max ~15%)
-        momentumBonus    // Bonus Momentum
-      ) / 1.6; // Diviseur ajusté pour normaliser autour de 100
+        (formDiff * 5) + 
+        momentumBonus
+      ) / 1.7; // Diviseur ajusté
 
       let certaintyLevel = 'Faible fiabilité';
       if (reliabilityScore > 90) {

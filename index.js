@@ -244,9 +244,55 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         const CleanSheetsB = (team2Clean / 100) * MatchsB;
         const basicGoalProb = 1 - ((CleanSheetsA + CleanSheetsB) / (MatchsA + MatchsB));
 
-        const formToScore = (form) => form.split('').reduce((acc, res) => acc + (res === 'W' ? 1.5 : res === 'D' ? 1 : 0.5), 0) / 5;
-        const lambdaTeam1 = (team1Over / 100 * 1.5) + formToScore(team1Form) * 0.3; // Réduction pour valeurs plus réalistes
-        const lambdaTeam2 = (team2Over / 100 * 1.5) + formToScore(team2Form) * 0.3; // Réduction pour valeurs plus réalistes
+        // AMÉLIORATION 1: Pondération temporelle de la forme (les matchs récents comptent plus)
+        // Format form: "WWDLL" (le plus récent à gauche ou à droite ? Généralement gauche = récent sur les sites de stats, 
+        // mais vérifions la logique actuelle. Supposons gauche = récent pour l'instant, sinon on inversera).
+        // Standard: Gauche = Plus récent.
+        const formToScoreWeighted = (form) => {
+          if (!form || form === 'N/A') return 1.5; // Valeur neutre
+          const weights = [1.5, 1.2, 1.0, 0.8, 0.5]; // Poids décroissants
+          let totalScore = 0;
+          let totalWeight = 0;
+          
+          const chars = form.split(''); // ex: ['W', 'W', 'D', 'L', 'L']
+          
+          chars.forEach((res, index) => {
+            const weight = weights[index] || 0.5;
+            const score = res === 'W' ? 3 : res === 'D' ? 1 : 0;
+            totalScore += score * weight;
+            totalWeight += weight;
+          });
+          
+          // Normaliser sur une échelle de 0 à 3 (similaire à des points par match)
+          return totalScore / totalWeight;
+        };
+
+        // AMÉLIORATION 3: Momentum (Bonus si 2 dernières victoires)
+        const getMomentumBonus = (form) => {
+            if (!form || form.length < 2) return 0;
+            if (form[0] === 'W' && form[1] === 'W') return 0.2; // Bonus offensif
+            return 0;
+        };
+
+        const score1 = formToScoreWeighted(team1Form);
+        const score2 = formToScoreWeighted(team2Form);
+        
+        // Conversion Score Forme (0-3) vers facteur offensif (0.5 - 2.5)
+        const formFactor1 = (score1 / 3) * 2 + 0.5; 
+        const formFactor2 = (score2 / 3) * 2 + 0.5;
+
+        // AMÉLIORATION 2: Avantage Domicile (Home Advantage)
+        // Statistiquement, l'équipe à domicile marque ~15-20% de buts en plus
+        const homeAdvantage = 1.15; 
+
+        // Calcul des Lambdas améliorés
+        // Base: Over% converti en buts espérés + Forme + Momentum
+        let lambdaTeam1 = (team1Over / 100 * 1.6) + (formFactor1 * 0.4) + getMomentumBonus(team1Form);
+        let lambdaTeam2 = (team2Over / 100 * 1.6) + (formFactor2 * 0.4) + getMomentumBonus(team2Form);
+
+        // Appliquer l'avantage domicile
+        lambdaTeam1 *= homeAdvantage;
+
         const lambdaTeam1Half = lambdaTeam1 * 0.45;
         const lambdaTeam2Half = lambdaTeam2 * 0.45;
         const probNoGoalFirstHalf = Math.exp(-lambdaTeam1Half) * Math.exp(-lambdaTeam2Half);
@@ -294,19 +340,14 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
         const refinedBttsProb = Math.min(100, Math.max(0, (1 - pTeam1Zero - pTeam2Zero + pTeam1Zero * pTeam2Zero) * 100));
     
         // Calcul pour Over 2.5
-let overProb = 0;
-let over15Prob = 0; // Nouveau calcul pour Over 1.5
-for (let g1 = 0; g1 <= maxGoals; g1++) {
-  for (let g2 = 0; g2 <= maxGoals; g2++) {
-    const totalGoals = g1 + g2;
-    if (totalGoals > 2) {
-      overProb += poissonProbability(g1, adjustedLambdaTeam1) * poissonProbability(g2, adjustedLambdaTeam2) * 100;
-    }
-    if (totalGoals > 1) { // Condition pour Over 1.5 (au moins 2 buts)
-      over15Prob += poissonProbability(g1, adjustedLambdaTeam1) * poissonProbability(g2, adjustedLambdaTeam2) * 100;
-    }
-  }
-}
+        let overProb = 0;
+        for (let g1 = 0; g1 <= maxGoals; g1++) {
+          for (let g2 = 0; g2 <= maxGoals; g2++) {
+            if (g1 + g2 > 2) {
+              overProb += poissonProbability(g1, adjustedLambdaTeam1) * poissonProbability(g2, adjustedLambdaTeam2) * 100;
+            }
+          }
+        }
     
         bttsProb = Math.max(0, Math.min(100, (bttsProb + refinedBttsProb) / 2));
     
@@ -325,14 +366,7 @@ for (let g1 = 0; g1 <= maxGoals; g1++) {
       
         goalProb = Math.min(1, Math.max(0, (goalProb + aiRefinedGoalProb / 100) / 2)); // Moyenne et normalisation finale en [0,1]
     
-        // Intégration de l'IA pour raffiner over15Prob
-const inputsOver15 = [adjustedLambdaTeam1, adjustedLambdaTeam2, bttsProb / 100, overProb / 100, team1Over / 100, team2Over / 100];
-const inputTensorOver15 = tf.tensor2d([inputsOver15]);
-const predictionOver15 = model.predict(inputTensorOver15);
-const aiRefinedOver15Prob = (await predictionOver15.data())[0] * 100;
-over15Prob = Math.min(100, Math.max(0, (over15Prob + aiRefinedOver15Prob) / 2));
-
-let otherProb = 0;
+        let otherProb = 0;
         $$('.predictionlabel').each((i, el) => {
           if ($$(el).text().trim() === 'Other') {
             otherProb = parseFloat($$(el).next().text().replace('%', ''));
@@ -355,7 +389,6 @@ let otherProb = 0;
           team2Over, 
           goalProb, 
           firstHalfGoalProb,
-          over15Prob,
           league // Add league here
         });
 
@@ -386,8 +419,17 @@ let otherProb = 0;
     // Attendre que toutes les promesses soient résolues
     const results = await Promise.all(resultsPromises);
     
-    // Filtrer les résultats null ou avec erreur
-    const validResults = results.filter(result => result && !result.error);
+    // Filtrer les résultats null, avec erreur, ou données aberrantes
+    const validResults = results.filter(result => {
+        if (!result || result.error) return false;
+        // Validation stricte des probabilités
+        const isValidProb = (p) => typeof p === 'number' && !isNaN(p) && p >= 0 && p <= 100;
+        const isValidGoalProb = (p) => typeof p === 'number' && !isNaN(p) && p >= 0 && p <= 1;
+        
+        return isValidProb(result.correctScoreProb) && 
+               isValidProb(result.bttsProb) && 
+               isValidGoalProb(result.goalProb);
+    });
     
     // Journaliser les statistiques
     console.log(`Analyse terminée: ${validResults.length}/${results.length} matchs traités avec succès`);
@@ -488,312 +530,33 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       // Calcul du poissonProb en utilisant la fonction existante
       const poissonProb = poissonCorrectScoreProb(item.team1Form, item.team2Form, item.team1Over, item.team2Over);
       
-      // Calcul des notes Elo
-      const team1Rating = formToRating(item.team1Form);
-      const team2Rating = formToRating(item.team2Form);
-      const eloProb = eloWinProbability(team1Rating, team2Rating) * 100;
-      
-      // Intégration transparente de l'IA pour raffiner reliabilityScore
-      const vipInputs = [layProb / 100, item.goalProb, item.firstHalfGoalProb / 100, item.bttsProb / 100, poissonProb / 100, eloProb / 100];
-      
-      const inputTensor = tf.tensor2d([vipInputs]);
-      const prediction = vipModel.predict(inputTensor);
-      const aiRefinedScore = (await prediction.data())[0] * 100;
-      
-      // Moyenne pour harmonie
-      const reliabilityScore = (
-        (layProb * 0.4) +
-        (item.goalProb * 100 * 0.3) +
-        (item.firstHalfGoalProb * 0.2) +
-        (item.bttsProb * 0.1) +
-        (aiRefinedScore * 0.2) +
-        (poissonProb * 0.2) +
-        (eloProb * 0.1)
-      ) / 1.5;
-
-      let certaintyLevel = 'Faible fiabilité';
-      if (reliabilityScore > 90) {
-        certaintyLevel = 'Très sûre';
-      } else if (reliabilityScore >= 70) {
-        certaintyLevel = 'Probable';
-      } else if (reliabilityScore >= 50) {
-        certaintyLevel = 'À considérer';
-      }
-      
-      const errorMargin = ((100 - reliabilityScore) / 2).toFixed(2);
-      
-      const evaluationCriteria = `Fiabilité calculée basée sur: layProb (40%), goalProb (30%), firstHalfGoalProb (20%), bttsProb (10%), AI refinement (20%), Poisson (20%), Elo (10%). Marge d'erreur estimée: ±${errorMargin}%`;
-      
-      return { 
-        ...item, 
-        layProb: layProb.toFixed(2),
-        reliabilityScore: reliabilityScore.toFixed(2),
-        certaintyLevel,
-        errorMargin,
-        evaluationCriteria,
-        poissonProb: poissonProb.toFixed(2),
-        eloProb: eloProb.toFixed(2)
-      };
-    }));
-    
-    reliabilityData.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
-    const top15 = reliabilityData.slice(0, 15);
-    
-    console.log(`Analyse VIP terminée: ${top15.length} matchs analysés`);
-    
-    const duration = Date.now() - startTime;
-    console.log(`Temps total d'analyse VIP: ${duration} ms`);
-    if (!process.env.VERCEL) {
-      fs.writeFileSync(cacheFile, JSON.stringify(top15, null, 2));
-      console.log(`Résultats VIP mis en cache pour ${dateStr}`);
-    }
-    return top15;
-  } catch (error) {
-    console.error(`Erreur lors de l'analyse VIP: ${error.message}`);
-    return [];
-  }
-}
-
-module.exports = { analyze, analyzeVIP };
-
-function formToRating(form) {
-  if (!form) return 1500; // Elo par défaut
-  const points = form.split('').reduce((sum, result) => {
-    if (result === 'W') return sum + 3;
-    if (result === 'D') return sum + 1;
-    return sum;
-  }, 0);
-  return 1500 + (points / form.length) * 200; // Échelle pour différencier
-}
-
-function eloWinProbability(team1Rating, team2Rating) {
-  const diff = team2Rating - team1Rating;
-  return 1 / (1 + Math.pow(10, diff / 400));
-}
-
-// Fonction pour ajuster les lambdas Poisson basées sur Elo
-function adjustLambdaWithElo(baseLambda, eloProb, isHomeTeam) {
-  const adjustmentFactor = isHomeTeam ? eloProb : (1 - eloProb);
-  return baseLambda * (1 + adjustmentFactor - 0.5); // Ajustement centré autour de 0.5
-}
-
-// Fonction pour générer des données synthétiques de manière déterministe
-function generateSyntheticData(numSamples) {
-  const data = [];
-  for (let i = 0; i < numSamples; i++) {
-    const t = (i / numSamples) * Math.PI * 10; // Pour variété
-    const lay = (Math.sin(t) + 1) / 2;
-    const goal = (Math.cos(t) + 1) / 2;
-    const fhg = (Math.sin(t * 2) + 1) / 2;
-    const btts = (Math.cos(t * 2) + 1) / 2;
-    const poisson = (Math.sin(t * 3) + 1) / 2;
-    const elo = (Math.cos(t * 3) + 1) / 2;
-    const target = (lay + goal + fhg + btts + poisson + elo) / 6 * (0.8 + Math.sin(t * 4) * 0.1); // Variabilité
-    data.push({
-      inputs: [lay, goal, fhg, btts, poisson, elo],
-      target
-    });
-  }
-  return data;
-}
-
-// Fonction pour entraîner le modèle VIP étendu (sans sauvegarde)
-async function trainVIPModel() {
-  const startTime = Date.now();
-  tf.setBackend('cpu');
-
-  const model = tf.sequential();
-  model.add(tf.layers.dense({
-    units: 32,
-    activation: 'relu',
-    inputShape: [6],
-    kernelInitializer: tf.initializers.glorotUniform({seed: 42})
-  }));
-  model.add(tf.layers.dense({units: 16, activation: 'relu'}));
-  model.add(tf.layers.dense({units: 1, activation: 'sigmoid'}));
-  model.compile({optimizer: 'adam', loss: 'meanSquaredError', metrics: ['mae']});
-
-  // Load real data from CSV
-  const data = [];
-  await new Promise((resolve, reject) => {
-    fs.createReadStream(path.join(__dirname, 'data', 'football_data.csv'))
-      .pipe(csv())
-      .on('data', (row) => {
-        data.push({
-          inputs: [
-            parseFloat(row.lay),
-            parseFloat(row.goal),
-            parseFloat(row.fhg),
-            parseFloat(row.btts),
-            parseFloat(row.poisson),
-            parseFloat(row.elo)
-          ],
-          target: parseFloat(row.target)
+      // AMÉLIORATION VIP: Recalcul des métriques avancées pour le score VIP
+      // Forme pondérée
+      const formToScoreWeighted = (form) => {
+        if (!form || form === 'N/A') return 1.5;
+        const weights = [1.5, 1.2, 1.0, 0.8, 0.5];
+        let totalScore = 0;
+        let totalWeight = 0;
+        const chars = form.split('');
+        chars.forEach((res, index) => {
+          const weight = weights[index] || 0.5;
+          const score = res === 'W' ? 3 : res === 'D' ? 1 : 0;
+          totalScore += score * weight;
+          totalWeight += weight;
         });
-      })
-      .on('end', resolve)
-      .on('error', reject);
-  });
-
-  if (data.length === 0) {
-    throw new Error('No data loaded from CSV');
-  }
-
-  const trainSize = Math.floor(data.length * 0.8);
-  const trainData = data.slice(0, trainSize);
-  const valData = data.slice(trainSize);
-
-  const trainXs = tf.tensor2d(trainData.map(d => d.inputs));
-  const trainYs = tf.tensor2d(trainData.map(d => [d.target]));
-  const valXs = tf.tensor2d(valData.map(d => d.inputs));
-  const valYs = tf.tensor2d(valData.map(d => [d.target]));
-
-  const history = await model.fit(trainXs, trainYs, {
-    epochs: 50,
-    batchSize: 64,
-    validationData: [valXs, valYs],
-    callbacks: tf.callbacks.earlyStopping({monitor: 'val_loss', patience: 10})
-  });
-
-  const valLoss = history.history.val_loss[history.history.val_loss.length - 1];
-  const valMae = history.history.val_mae[history.history.val_mae.length - 1];
-  console.log(`Entraînement terminé. Validation MAE: ${valMae}`);
-  const duration = Date.now() - startTime;
-  console.log(`Temps d'entraînement: ${duration} ms`);
-
-  if (valMae < 0.1) {
-    console.log('Précision cible atteinte.');
-  }
-
-  return model;
-}
-
-// Mise à jour de createFixedVIPModel pour entraîner le modèle à chaque fois
-async function createFixedVIPModel() {
-  if (cachedModel) {
-    return cachedModel;
-  }
-  console.log('Entraînement du modèle VIP en cours...');
-  cachedModel = await trainVIPModel();
-  return cachedModel;
-}
-
-// Nouvelle fonction pour extraire les noms d'équipes à partir du lien du match
-function extractTeamNames(matchLink) {
-  const parts = matchLink.split('/match-prediction-analysis-');
-  if (parts.length < 2) return { team1: 'Unknown', team2: 'Unknown' };
-  const slug = parts[1].split('-betting-tip')[0];
-  const [team1, team2] = slug.split('-vs-').map(t => t.replace(/-/g, ' ').trim());
-  return { team1, team2 };
-}
-
-// Nouvelle fonction pour obtenir les ratings Elo réels depuis ClubElo API
-async function getEloRating(teamName) {
-  try {
-    const response = await axios.get(`http://clubelo.com/api/${encodeURIComponent(teamName)}`);
-    const data = response.data;
-    return data.elo || 1500; // Valeur par défaut si non trouvée
-  } catch (error) {
-    console.error(`Erreur lors de la récupération du rating Elo pour ${teamName}:`, error.message);
-    return 1500; // Valeur par défaut en cas d'erreur
-  }
-}
-
-// Nouvelle fonction pour obtenir les stats réelles (buts marqués/encaissés) via Football-Data.org API
-async function getTeamStats(teamName, league) {
-  const API_KEY = 'YOUR_FOOTBALL_DATA_API_KEY'; // Remplacez par votre clé API gratuite de Football-Data.org
-  try {
-    // Exemple : Obtenir l'ID de l'équipe (cette partie peut nécessiter une recherche préalable)
-    // Pour simplifier, supposons une recherche par nom d'équipe dans une ligue spécifique
-    const searchResponse = await axios.get(`https://api.football-data.org/v4/teams?name=${encodeURIComponent(teamName)}`, {
-      headers: { 'X-Auth-Token': API_KEY }
-    });
-    const teamId = searchResponse.data.teams?.[0]?.id;
-    if (!teamId) return { avgGoalsScored: 1.5, avgGoalsConceded: 1.5 };
-
-    // Obtenir les stats (exemple pour la saison en cours)
-    const statsResponse = await axios.get(`https://api.football-data.org/v4/teams/${teamId}/matches?status=FINISHED&limit=10`, {
-      headers: { 'X-Auth-Token': API_KEY }
-    });
-    const matches = statsResponse.data.matches;
-    let totalScored = 0, totalConceded = 0, count = 0;
-    matches.forEach(m => {
-      const isHome = m.homeTeam.id === teamId;
-      totalScored += isHome ? m.score.fullTime.home : m.score.fullTime.away;
-      totalConceded += isHome ? m.score.fullTime.away : m.score.fullTime.home;
-      count++;
-    });
-    return {
-      avgGoalsScored: count > 0 ? totalScored / count : 1.5,
-      avgGoalsConceded: count > 0 ? totalConceded / count : 1.5
-    };
-  } catch (error) {
-    console.error(`Erreur lors de la récupération des stats pour ${teamName}:`, error.message);
-    return { avgGoalsScored: 1.5, avgGoalsConceded: 1.5 }; // Valeurs par défaut
-  }
-}
-
-// Fonction pour calculer la probabilité Poisson
-function poissonProbability(lambda, k) {
-  return (Math.exp(-lambda) * Math.pow(lambda, k)) / factorial(k);
-}
-
-function factorial(n) {
-  let res = 1;
-  for (let i = 2; i <= n; i++) res *= i;
-  return res;
-}
-
-// Fonction pour calculer la probabilité Poisson du score correct
-function poissonCorrectScoreProb(team1Form, team2Form, team1Over, team2Over) {
-  // Calcul simple des lambdas basés sur la forme et over
-  const wins1 = (team1Form.match(/W/g) || []).length;
-  const wins2 = (team2Form.match(/W/g) || []).length;
-  const lambda1 = (wins1 / 5) + (parseFloat(team1Over) || 1.5);
-  const lambda2 = (wins2 / 5) + (parseFloat(team2Over) || 1.5);
-  // Probabilité d'un score spécifique, par exemple 1-1 comme proxy pour correct score
-  const prob = poissonProbability(lambda1, 1) * poissonProbability(lambda2, 1) * 100;
-  return prob;
-}
-
-// VIP analysis function
-async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
-  const startTime = Date.now();
-  try {
-    const cacheFile = path.join(__dirname, `vip_cache_${dateStr}.json`);
-    const cacheAgeHours = 24;
-    if (fs.existsSync(cacheFile)) {
-      const stats = fs.statSync(cacheFile);
-      const age = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
-      if (age < cacheAgeHours) {
-        console.log(`Chargement des résultats VIP depuis le cache pour ${dateStr}`);
-        try {
-          const cachedData = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-          const duration = Date.now() - startTime;
-          console.log(`Temps total d'analyse VIP (depuis cache): ${duration} ms`);
-          return cachedData;
-        } catch (cacheError) {
-          console.error(`Erreur lors de la lecture du cache VIP: ${cacheError.message}`);
-          // Continuer avec l'analyse si le cache est corrompu
-        }
-      }
-    }
-    const results = await analyze(dateStr) || [];
-    
-    if (!results || !Array.isArray(results) || results.length === 0) {
-      console.warn(`Aucun résultat valide pour l'analyse VIP à la date ${dateStr}`);
-      return [];
-    }
-    
-    // Train the model once outside the loop
-    const vipModel = await createFixedVIPModel();
-    
-    const reliabilityData = await Promise.all(results.map(async (item) => {
-      const layProb = 100 - item.correctScoreProb;
+        return totalScore / totalWeight; // 0-3
+      };
       
-      // Calcul du poissonProb en utilisant la fonction existante
-      const poissonProb = poissonCorrectScoreProb(item.team1Form, item.team2Form, item.team1Over, item.team2Over);
+      const formScore1 = formToScoreWeighted(item.team1Form);
+      const formScore2 = formToScoreWeighted(item.team2Form);
+      const formDiff = Math.abs(formScore1 - formScore2); // Différence de forme
       
+      // Momentum
+      const getMomentum = (form) => (form && form.length >= 2 && form[0] === 'W' && form[1] === 'W') ? 1 : 0;
+      const momentum1 = getMomentum(item.team1Form);
+      const momentum2 = getMomentum(item.team2Form);
+      const momentumBonus = (momentum1 || momentum2) ? 5 : 0; // Bonus de 5% si une équipe est en feu
+
       // Calcul des notes Elo
       const team1Rating = formToRating(item.team1Form);
       const team2Rating = formToRating(item.team2Form);
@@ -806,16 +569,18 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       const prediction = vipModel.predict(inputTensor);
       const aiRefinedScore = (await prediction.data())[0] * 100;
       
-      // Moyenne pour harmonie
+      // Moyenne pondérée AMÉLIORÉE pour reliabilityScore
       const reliabilityScore = (
-        (layProb * 0.4) +
-        (item.goalProb * 100 * 0.3) +
-        (item.firstHalfGoalProb * 0.2) +
+        (layProb * 0.35) +
+        (item.goalProb * 100 * 0.25) +
+        (item.firstHalfGoalProb * 0.15) +
         (item.bttsProb * 0.1) +
-        (aiRefinedScore * 0.2) +
-        (poissonProb * 0.2) +
-        (eloProb * 0.1)
-      ) / 1.5;
+        (aiRefinedScore * 0.15) +
+        (poissonProb * 0.15) +
+        (eloProb * 0.1) +
+        (formDiff * 5) + // Bonus pour différence de forme (max ~15%)
+        momentumBonus    // Bonus Momentum
+      ) / 1.6; // Diviseur ajusté pour normaliser autour de 100
 
       let certaintyLevel = 'Faible fiabilité';
       if (reliabilityScore > 90) {
@@ -828,7 +593,7 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       
       const errorMargin = ((100 - reliabilityScore) / 2).toFixed(2);
       
-      const evaluationCriteria = `Fiabilité calculée basée sur: layProb (40%), goalProb (30%), firstHalfGoalProb (20%), bttsProb (10%), AI refinement (20%), Poisson (20%), Elo (10%). Marge d'erreur estimée: ±${errorMargin}%`;
+      const evaluationCriteria = `Fiabilité calculée basée sur: layProb (35%), goalProb (25%), AI (15%), Poisson (15%), Forme/Momentum (10%). Marge d'erreur estimée: ±${errorMargin}%`;
       
       return { 
         ...item, 

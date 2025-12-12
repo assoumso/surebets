@@ -52,7 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
                 // Filtrer les matchs qui n'ont pas encore été joués
                 let filteredMatches = resultsData;
-                // Appliquer le filtre de probabilité\n                // filteredMatches = filteredMatches.filter(item => item.correctScoreProb < 50);
+
+                // Appliquer le filtre de probabilité demandé
+                filteredMatches = filteredMatches.filter(item => {
+                    const goalProb = (item.goalProb || 0) * 100;
+                    const over15Prob = item.over15Prob || 0;
+                    return goalProb >= 69.51 && over15Prob >= 63.83;
+                });
+
                 // Trier par probabilité Lay décroissante (du plus élevé au plus faible)
                 filteredMatches.sort((a, b) => {
                     const layProbA = 100 - a.correctScoreProb;
@@ -259,7 +266,7 @@ function loadVIPResults(date) {
   fetch('/analyze-vip?date=' + date)
     .then(response => response.json())
     .then(data => {
-      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 15);
+      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 25);
       displayVIPResults(vipData);
     })
     .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));

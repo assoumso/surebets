@@ -624,17 +624,17 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
     }));
     
     reliabilityData.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
-    const top15 = reliabilityData.slice(0, 15);
+    const top25 = reliabilityData.slice(0, 25);
     
-    console.log(`Analyse VIP terminée: ${top15.length} matchs analysés`);
+    console.log(`Analyse VIP terminée: ${top25.length} matchs analysés`);
     
     const duration = Date.now() - startTime;
     console.log(`Temps total d'analyse VIP: ${duration} ms`);
     if (!process.env.VERCEL) {
-      fs.writeFileSync(cacheFile, JSON.stringify(top15, null, 2));
+      fs.writeFileSync(cacheFile, JSON.stringify(top25, null, 2));
       console.log(`Résultats VIP mis en cache pour ${dateStr}`);
     }
-    return top15;
+    return top25;
   } catch (error) {
     console.error(`Erreur lors de l'analyse VIP: ${error.message}`);
     return [];

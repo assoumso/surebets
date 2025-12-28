@@ -84,28 +84,149 @@ async function fetchWithBrowser(url, retries = MAX_RETRIES) {
   throw new Error('fetchWithBrowser is deprecated; use browser in analyze');
 }
 
-// Fonction de validation des données
+// Fonction de validation et nettoyage des données
 function validateMatchData(match) {
   const issues = [];
   
-  if (!match.time || match.time === 'N/A') issues.push('Heure manquante');
-  if (!match.correctScore) issues.push('Score correct manquant');
-  if (isNaN(match.correctScoreProb) || match.correctScoreProb < 0 || match.correctScoreProb > 100) {
-    issues.push(`Probabilité de score correct invalide: ${match.correctScoreProb}`);
-    match.correctScoreProb = Math.max(0, Math.min(100, match.correctScoreProb || 0));
+  // 1. Validation de l'heure
+  if (!match.time || match.time === 'N/A') {
+    issues.push('Heure manquante ou invalide');
+    match.time = '??:??';
   }
-  if (isNaN(match.bttsProb) || match.bttsProb < 0 || match.bttsProb > 100) {
-    issues.push(`Probabilité BTTS invalide: ${match.bttsProb}`);
-    match.bttsProb = Math.max(0, Math.min(100, match.bttsProb || 0));
+
+  // 2. Nettoyage et validation du Score Correct
+  if (!match.correctScore || match.correctScore === 'N/A') {
+    issues.push('Score correct manquant');
+    match.correctScore = '0:0';
+  } else if (!/^\d+:\d+$/.test(match.correctScore)) {
+    issues.push(`Format de score invalide: ${match.correctScore}`);
+    match.correctScore = '0:0';
   }
+
+  // 3. Validation des probabilités (0-100)
+  const validateProb = (val, name) => {
+    let num = parseFloat(val);
+    if (isNaN(num) || num < 0 || num > 100) {
+      issues.push(`Probabilité ${name} invalide: ${val}`);
+      return Math.max(0, Math.min(100, num || 0));
+    }
+    return num;
+  };
+
+  match.correctScoreProb = validateProb(match.correctScoreProb, 'Score Correct');
+  match.bttsProb = validateProb(match.bttsProb, 'BTTS');
+  match.over15Prob = validateProb(match.over15Prob, 'Over 1.5');
+  match.firstHalfGoalProb = validateProb(match.firstHalfGoalProb, '1ère Mi-temps');
+
+  // 4. Validation de goalProb (0-1)
   if (isNaN(match.goalProb) || match.goalProb < 0 || match.goalProb > 1) {
-    issues.push(`Probabilité de but invalide: ${match.goalProb}`);
-    match.goalProb = Math.max(0, Math.min(1, match.goalProb || 0));
+    issues.push(`Probabilité de but globale invalide: ${match.goalProb}`);
+    match.goalProb = Math.max(0, Math.min(1, parseFloat(match.goalProb) || 0));
+  }
+
+  // 5. Détection d'anomalies (Système Qualité)
+  // Un match avec 0% de probabilité de but mais un score correct de 2:2 est une anomalie
+  const totalGoals = match.correctScore.split(':').reduce((a, b) => parseInt(a) + parseInt(b), 0);
+  if (totalGoals > 0 && match.goalProb < 0.1) {
+    issues.push('Anomalie détectée: Score positif avec probabilité de but très faible');
+    match.qualityWarning = true;
+  }
+
+  // 6. Vérification spécifique pour les faux positifs connus (ex: Al Sailiya Vs Al Wakrah)
+  const matchName = (match.match || '').toLowerCase();
+  if (matchName.includes('sailiya') && matchName.includes('wakrah')) {
+    // Si ce match apparaît avec des probabilités aberrantes, on le marque
+    if (match.over15Prob > 90 && match.goalProb < 0.5) {
+      issues.push('Suspicion de faux positif sur Al Sailiya Vs Al Wakrah');
+      match.qualityWarning = true;
+    }
+  }
+
+  if (issues.length > 0) {
+    console.warn(`[Vérification Qualité] Match ${match.match}: ${issues.join(' | ')}`);
   }
   
-  if (issues.length > 0) {
-    console.warn(`Problèmes détectés pour le match ${match.match}: ${issues.join(', ')}`);
+  return match;
+}
+
+/**
+ * Système de vérification qualité pour détecter les anomalies de prédiction
+ * @param {Object} match L'objet match analysé
+ * @returns {Object} L'objet match avec score de qualité et flags
+ */
+function qualityCheck(match) {
+  let qualityScore = 100;
+  const anomalies = [];
+
+  // 1. Cohérence Score vs Over 1.5
+  const totalGoals = match.correctScore.split(':').reduce((a, b) => parseInt(a) + parseInt(b), 0);
+  if (totalGoals >= 2 && match.over15Prob < 40) {
+    qualityScore -= 30;
+    anomalies.push('Incohérence Score/Over1.5');
   }
+
+  // 2. Cohérence BTTS vs Score
+  const isBTTS = match.correctScore.includes(':') && 
+                 match.correctScore.split(':').every(s => parseInt(s) > 0);
+  if (isBTTS && match.bttsProb < 30) {
+    qualityScore -= 25;
+    anomalies.push('Incohérence Score/BTTS');
+  }
+
+  // 3. Probabilités extrêmes suspectes
+  if (match.correctScoreProb > 40) { // Un score exact à plus de 40% est rare
+    qualityScore -= 20;
+    anomalies.push('Probabilité Score suspecte');
+  }
+
+  // 4. Conflit de forme (Deux équipes en très mauvaise forme avec prédiction de beaucoup de buts)
+  if (match.team1Form === 'LLLLL' && match.team2Form === 'LLLLL' && match.over15Prob > 80) {
+    qualityScore -= 40;
+    anomalies.push('Prédiction offensive sur équipes en méforme totale');
+  }
+
+  match.qualityScore = qualityScore;
+  match.anomalies = anomalies;
+  match.isReliable = qualityScore >= 60 && !match.qualityWarning;
+
+  return match;
+}
+
+/**
+ * Analyse d'expert football pour affiner les prédictions
+ * @param {Object} match L'objet match
+ * @returns {Object} Match avec analyse d'expert
+ */
+function expertFootballAnalysis(match) {
+  let expertNote = "";
+  let expertRating = 0;
+
+  // Analyse de la ligue (Expertise contextuelle)
+  const highScoringLeagues = ['Bundesliga', 'Eredivisie', 'Premier League'];
+  const lowScoringLeagues = ['Serie A', 'Ligue 1', 'La Liga'];
+
+  if (highScoringLeagues.includes(match.league)) {
+    expertRating += 10;
+    expertNote += "Ligue historiquement offensive. ";
+  } else if (lowScoringLeagues.includes(match.league)) {
+    expertRating -= 5;
+    expertNote += "Ligue tactique et défensive. ";
+  }
+
+  // Analyse de la forme (Momentum)
+  if (match.team1Form && match.team1Form.startsWith('WWW')) {
+    expertRating += 15;
+    expertNote += "Domicile sur une excellente dynamique. ";
+  }
+
+  // Détection de "Match Piège"
+  if (match.over15Prob > 85 && match.goalProb < 0.6) {
+    expertRating -= 20;
+    expertNote += "Attention: Statistiques contradictoires (Match Piège). ";
+  }
+
+  match.expertRating = expertRating;
+  match.expertNote = expertNote.trim();
   
   return match;
 }
@@ -406,7 +527,10 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
           league // Add league here
         });
 
-        return matchData;
+        // Appliquer l'analyse d'expert et le contrôle qualité
+        const finalMatchData = expertFootballAnalysis(qualityCheck(matchData));
+
+        return finalMatchData;
       } catch (error) {
         console.error(`Error processing match ${match.link}: ${error.message}`);
         // Retourner un objet avec des valeurs par défaut en cas d'erreur
@@ -434,16 +558,20 @@ async function analyze(dateStr = new Date().toISOString().split('T')[0]) {
     // Attendre que toutes les promesses soient résolues
     const results = await Promise.all(resultsPromises);
     
-    // Filtrer les résultats null, avec erreur, ou données aberrantes
+    // Filtrer les résultats null, avec erreur, ou données aberrantes (Contrôle Qualité strict)
     const validResults = results.filter(result => {
         if (!result || result.error) return false;
+        
         // Validation stricte des probabilités
         const isValidProb = (p) => typeof p === 'number' && !isNaN(p) && p >= 0 && p <= 100;
         const isValidGoalProb = (p) => typeof p === 'number' && !isNaN(p) && p >= 0 && p <= 1;
         
-        return isValidProb(result.correctScoreProb) && 
-               isValidProb(result.bttsProb) && 
-               isValidGoalProb(result.goalProb);
+        const basicCheck = isValidProb(result.correctScoreProb) && 
+                           isValidProb(result.bttsProb) && 
+                           isValidGoalProb(result.goalProb);
+        
+        // Supprimer les faux positifs et matchs non fiables détectés par le système qualité
+        return basicCheck && result.isReliable !== false;
     });
     
     // Journaliser les statistiques
@@ -584,19 +712,20 @@ async function analyzeVIP(dateStr = new Date().toISOString().split('T')[0]) {
       const prediction = vipModel.predict(inputTensor);
       const aiRefinedScore = (await prediction.data())[0] * 100;
       
-      // Moyenne pondérée AMÉLIORÉE pour reliabilityScore
+      // Moyenne pondérée AMÉLIORÉE pour reliabilityScore avec expertise football
       const reliabilityScore = (
-        (layProb * 0.3) +
-        (item.goalProb * 100 * 0.2) +
-        (item.over15Prob * 0.15) + // Intégration Over 1.5
+        (layProb * 0.25) +
+        (item.goalProb * 100 * 0.15) +
+        (item.over15Prob * 0.15) +
         (item.firstHalfGoalProb * 0.1) +
-        (item.bttsProb * 0.1) +
+        (item.bttsProb * 0.05) +
         (aiRefinedScore * 0.1) +
-        (poissonProb * 0.1) +
-        (eloProb * 0.1) +
-        (formDiff * 5) + 
+        (poissonProb * 0.05) +
+        (eloProb * 0.05) +
+        (formDiff * 2) + 
+        (item.expertRating || 0) + // Ajout de la note d'expert
         momentumBonus
-      ) / 1.7; // Diviseur ajusté
+      ) / 1.5; // Diviseur ajusté pour normaliser avec les nouveaux poids
 
       let certaintyLevel = 'Faible fiabilité';
       if (reliabilityScore > 90) {

@@ -266,7 +266,9 @@ function loadVIPResults(date) {
   fetch('/analyze-vip?date=' + date)
     .then(response => response.json())
     .then(data => {
-      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 25);
+      // Filtrer seulement les matchs dont la Prob. Over 1.5 >= 74.69%
+      const filteredData = data.filter(match => (match.over15Prob || 0) >= 74.69);
+      vipData = filteredData.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 25);
       displayVIPResults(vipData);
     })
     .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));
@@ -278,7 +280,7 @@ function displayVIPResults(results) {
   const vipTableBody = document.querySelector('#vip-table tbody');
   vipTableBody.innerHTML = '';
   if (results.length === 0) {
-    vipTableBody.innerHTML = '<tr><td colspan="11">Aucun résultat VIP disponible pour cette date.</td></tr>';
+    vipTableBody.innerHTML = '<tr><td colspan="11">Aucun résultat VIP avec une probabilité Over 1.5 ≥ 74.69% disponible pour cette date.</td></tr>';
     return;
   }
   results.forEach(match => {

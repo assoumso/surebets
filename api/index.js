@@ -63,30 +63,17 @@ app.get('/analyze', async (req, res) => {
       return res.status(500).json({ error: 'Format de résultat invalide' });
     }
     
-    if (results.length === 0) {
-      console.warn(`Aucun match trouvé pour la date ${date}`);
-    }
+    // Application de la deuxième couche d'analyse Google AI (complémentaire)
+    // Note: analyzeVIP fait déjà cet appel, on peut s'en inspirer ici pour la cohérence
+    const { analyzeVIP } = require('../index'); // S'assurer de l'import
+    const finalResults = await analyzeVIP(date);
     
-    // Vérifier et formater les résultats pour s'assurer que tous les pourcentages sont arrondis
-    const formattedResults = results.map(match => {
-      // S'assurer que toutes les probabilités sont des nombres valides
-      const ensureValidNumber = (value, isPercentage = true) => {
-        const num = parseFloat(value);
-        if (isNaN(num)) return isPercentage ? 0 : 0;
-        return isPercentage ? Math.max(0, Math.min(100, num)) : Math.max(0, Math.min(1, num));
-      };
-      
-      return {
-        ...match,
-        correctScoreProb: ensureValidNumber(match.correctScoreProb),
-        layProb: ensureValidNumber(match.layProb),
-        bttsProb: ensureValidNumber(match.bttsProb),
-        goalProb: ensureValidNumber(match.goalProb, false),
-        firstHalfGoalProb: ensureValidNumber(match.firstHalfGoalProb)
-      };
-    });
+    // Filtrage final : Uniquement les matchs Over 2.5 probables (seuil réduit à 45%)
+    const highlyProbableMatches = finalResults.filter(match => match.over25Prob > 45);
     
-    res.json(formattedResults);
+    console.log(`${highlyProbableMatches.length} matchs retenus après analyse double IA et filtrage Over 2.5 (>45%)`);
+    
+    res.json(highlyProbableMatches);
   } catch (error) {
     console.error(`Erreur pendant l'analyse: ${error.message}`);
     console.error(error.stack);

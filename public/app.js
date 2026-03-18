@@ -53,11 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Filtrer les matchs qui n'ont pas encore été joués
                 let filteredMatches = resultsData;
 
-                // Appliquer le filtre de probabilité demandé
+                // Le filtrage principal est maintenant fait côté serveur (Double IA)
+                // On s'assure juste ici de la cohérence visuelle
                 filteredMatches = filteredMatches.filter(item => {
-                    const goalProb = (item.goalProb || 0) * 100;
-                    const over15Prob = item.over15Prob || 0;
-                    return goalProb >= 69.51 && over15Prob >= 63.83;
+                    const over25Prob = item.over25Prob || 0;
+                    return over25Prob > 45; // Seuil réduit à 45%
                 });
 
                 // Trier par probabilité Lay décroissante (du plus élevé au plus faible)
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         resultsSection.style.display = 'block';
                         displayResults(filteredMatches);
                     } else {
-                        noResults.textContent = 'Aucun match avec probabilité de score correct inférieure à 50%. Vérifiez les résultats VIP pour plus d\'options.';
+                        noResults.textContent = 'Aucun match avec probabilité d\'Over 2.5 > 45% n\'a été trouvé pour cette date après double analyse.';
                         noResults.style.display = 'block';
                     }
                 }
@@ -114,8 +114,10 @@ function displayResults(data) {
                 <td>${item.correctScoreProb.toFixed(2)}%</td>
                 
                 <td>${item.bttsProb.toFixed(2)}%</td>
-                <td class="${getProbColor(item.goalProb * 100)}">${(item.goalProb * 100).toFixed(2)}%</td>
-                <td class="${getProbColor(item.over15Prob || 0)}">${(item.over15Prob || 0).toFixed(2)}%</td>
+                <td class="${getProbColor(item.over25Prob || 0)}">${(item.over25Prob || 0).toFixed(2)}%</td>
+                <td class="${parseFloat(item.xG_Estimate) > 2.5 ? 'prob-green' : ''}">${item.xG_Estimate || 'N/A'}</td>
+                <td class="badge-${(item.matchImportance || 'Standard').toLowerCase()}">${item.matchImportance || 'Standard'}</td>
+                <td title="${item.aiReasoning || item.googleAIAnalysis}">✅ Confirmée</td>
                 
                 <td>${item.date}</td>
             `;
@@ -266,9 +268,7 @@ function loadVIPResults(date) {
   fetch('/analyze-vip?date=' + date)
     .then(response => response.json())
     .then(data => {
-      // Filtrer seulement les matchs dont la Prob. Over 1.5 >= 74.69%
-      const filteredData = data.filter(match => (match.over15Prob || 0) >= 74.69);
-      vipData = filteredData.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 25);
+      vipData = data.sort((a, b) => b.reliabilityScore - a.reliabilityScore).slice(0, 25);
       displayVIPResults(vipData);
     })
     .catch(error => console.error('Erreur lors du chargement des résultats VIP:', error));
@@ -280,7 +280,7 @@ function displayVIPResults(results) {
   const vipTableBody = document.querySelector('#vip-table tbody');
   vipTableBody.innerHTML = '';
   if (results.length === 0) {
-    vipTableBody.innerHTML = '<tr><td colspan="11">Aucun résultat VIP avec une probabilité Over 1.5 ≥ 74.69% disponible pour cette date.</td></tr>';
+    vipTableBody.innerHTML = '<tr><td colspan="11">Aucun résultat VIP disponible pour cette date.</td></tr>';
     return;
   }
   results.forEach(match => {
@@ -289,14 +289,8 @@ function displayVIPResults(results) {
     const matchName = matchSlug.replace(/-/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     
     // Calculer les classes de couleur pour les probabilités
-    const goalProbValue = match.goalProb * 100;
-    const goalProbClass = getColorClass(goalProbValue);
-    
-    const over15ProbValue = match.over15Prob || 0;
-    const over15ProbClass = getColorClass(over15ProbValue);
-    
-    const reliabilityValue = parseFloat(match.reliabilityScore) || 0;
-    const reliabilityClass = getColorClass(reliabilityValue);
+    const over25ProbValue = match.over25Prob || 0;
+    const over25ProbClass = getColorClass(over25ProbValue);
     
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -307,9 +301,10 @@ function displayVIPResults(results) {
       <td>${match.correctScoreProb.toFixed(2)}%</td>
       
       <td>${match.bttsProb.toFixed(2)}%</td>
-      <td class="${goalProbClass}">${goalProbValue.toFixed(2)}%</td>
-      <td class="${over15ProbClass}">${over15ProbValue.toFixed(2)}%</td>
-      
+      <td class="${over25ProbClass}">${over25ProbValue.toFixed(2)}%</td>
+      <td class="${parseFloat(match.xG_Estimate) > 2.5 ? 'prob-green' : ''}">${match.xG_Estimate || 'N/A'}</td>
+      <td class="badge-${(match.matchImportance || 'Standard').toLowerCase()}">${match.matchImportance || 'Standard'}</td>
+      <td title="${match.aiReasoning || match.googleAIAnalysis || 'Analyse confirmée'}">✅ Confirmée</td>
       
       <td>${match.date}</td>
     `;
